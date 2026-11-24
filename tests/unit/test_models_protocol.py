@@ -54,3 +54,13 @@ def test_train_baseline_with_categoricals_and_excluded(tmp_path):
     assert "code_gender" not in Xf and "sk_id_curr" not in Xf and "target" not in Xf
     _, m, _ = cv.run_cv(tb.logreg_for(Xf, 42), Xf, yf, idf, 42, 5)
     assert m["roc_auc"] > 0.6
+
+
+def test_benchmark_models_fit_predict_in_pipeline():
+    from src.models import benchmark
+    X, y, ids = _data(500)
+    X["cat"] = np.where(np.arange(500) % 2, "u", "v")
+    for name, p in [("lgbm", {"n_estimators": 20}), ("xgb", {"n_estimators": 20}),
+                    ("catboost", {"iterations": 20}), ("rf", {"n_estimators": 20})]:
+        _, m, _ = cv.run_cv(benchmark.make(name, X, 42, p), X, y, ids, 42, 3)
+        assert m["roc_auc"] > 0.6, name
