@@ -28,8 +28,13 @@ def main(config: str = protocol.DEFAULT_CONFIG):
                      "pr_auc": round(m["pr_auc"], 4), "seconds": round(time.time() - t0)})
         print(rows[-1], flush=True)
 
+    spw = float((yt == 0).sum() / (yt == 1).sum())
     for cw in t["class_weight_options"]:
-        trial({"class_weight": cw}, f"class_weight={cw}")
+        if cw is None:
+            trial({}, "no_weight")
+        else:  # balanced: xgb/catboost → scale_pos_weight, lgbm/rf → class_weight
+            trial({"scale_pos_weight": spw} if name in ("xgb", "catboost") else {"class_weight": "balanced"},
+                  "balanced")
     for i, p in enumerate(ParameterSampler(t["space"], n_iter=t["n_trials"], random_state=seed)):
         trial(p, f"trial{i}")
     best = max(rows[len(t["class_weight_options"]):], key=lambda r: r["roc_auc"])
