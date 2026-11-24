@@ -8,7 +8,7 @@ import uuid
 from fastapi import FastAPI, HTTPException, Query
 
 from api import service
-from api.bundle import Bundle, BundleError, load_bundle
+from api.bundle import Bundle, BundleError, ExplainUnavailable, load_bundle
 from api.schemas import (BatchRequest, BatchResponse, BatchRow, BatchSummary, RowError, ExplainResponse, ModelInfo,
                          Prediction, PredictRequest)
 
@@ -84,13 +84,17 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
     @app.post("/explain", response_model=ExplainResponse)
     def explain(req: PredictRequest, include_values: bool = False,
                 top_n: int = Query(5, ge=1, le=10)):
-        # İzah src/explainability (05) tərəfindən hesablanır; hazır olana qədər 503.
-        need()
+        t0 = time.perf_counter()
+        b = need()
         try:
-            from src.explainability import explain_one  # noqa: F401
-        except ImportError:
-            raise HTTPException(503, "izah modulu (Agent 05) hazır deyil")
-        raise HTTPException(503, "izah inteqrasiyası kontrakt dəqiqləşəndən sonra")
+            ex = b.explainer()
+        except ExplainUnavailable as e:
+            raise HTTPException(503, str(e))
+        pred = service.score(b, [req.applicant])[0]
+        X, _ = service.to_frame(b, [req.applicant])
+        expl = ex.explain_row(X, top_n=top_n, include_values=include_values)  # fərdi izah loga yazılmır
+        logged([pred], t0)
+        return ExplainResponse(**pred.model_dump(), explanation=expl)
 
     return app
 
