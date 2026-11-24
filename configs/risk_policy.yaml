@@ -3,7 +3,9 @@
 status: approved_provisional
 version: 1.0-xgb-provisional
 model_version: xgb-20261124-a9b6c81
-business_approval: pending
+business_approval: pending   # demo üçün tələb olunmur; real istifadə üçün məcburi (decisions/0004)
+intended_use: demo_prototype_only
+regulatory_reference: EU (GDPR / AI Act) — hüquqşünas rəyi gözlənilir
 thresholds: {low_max: 0.0274, medium_max: 0.1915}
 approved_by: agent-01 (texniki; 2026-11-24)
 conditions:
