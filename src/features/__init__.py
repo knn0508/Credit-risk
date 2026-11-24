@@ -1,7 +1,8 @@
 from .aggregate_features import AggregateFeatures
+from .winsorizer import Winsorizer
 from .application_features import ApplicationFeatures
 
-__all__ = ["ApplicationFeatures", "AggregateFeatures"]
+__all__ = ["ApplicationFeatures", "AggregateFeatures", "Winsorizer"]
 
 # decisions/0002 (təsdiqli): model feature-ı deyil, yalnız 05 fairness auditi üçün data-da qalır.
 # 04 bunu bundle metadata.excluded_protected_features-ə yazır.
