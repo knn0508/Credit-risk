@@ -1,0 +1,14 @@
+# Handoff 04 → 05: aparıcı model bundle (XGBoost, unvalidated)
+**Bundle:** `artifacts/models/xgb-20261124-a9b6c81/` (git sha a9b6c81, branch agent/04-modeling). Fayllar: model.joblib, preprocessor.joblib (None — preprocessing Pipeline daxilində),
+feature_names.json (242), metadata.json, oof_predictions.parquet, split.json, background.parquet. calibrator YOXDUR; `validation_status=unvalidated`.
+**Skor (train hissəsi, 5-fold OOF, 246 008 sətir):** ROC-AUC 0.7869, PR-AUC 0.2768 (fold std ~0.001). Holdout (61 503) heç yerdə istifadə olunmayıb; application_test istifadə olunmayıb.
+**Müqayisə (eyni split/fold-lar, eyni feature set):** LightGBM 0.7851/0.2766, XGBoost default 0.7844/0.2747, CatBoost 0.7811/0.2731, RF 0.7631/0.2478, LogReg(+Winsorizer) ~0.767/0.25, Dummy 0.5/0.081.
+LightGBM/XGBoost fərqi fold std daxilindədir; XGBoost seçilməsi tuning-dən sonra nominal üstünlük və GPU sürətinə əsaslanır. Seçim 10 cəhd içindən OOF-da edilib → OOF skoru bir qədər optimistik ola bilər; qərarlı rəqəm holdout-dur (05).
+**Imbalance:** class weight (scale_pos_weight=11.4) xeyir vermədi (0.7836 vs 0.7844); resampling/SMOTE sınanmadı (OOF-da kalibrasiya pozulacağı üçün).
+**Tuning:** `python -m src.models.tune`, config `tuning:` (random search 10 cəhd, seed 42, yalnız train CV). Seçilən: max_depth 5, lr 0.05, n_estimators 900, min_child_weight 100, colsample 0.3, reg_lambda 5 (configs/training.yaml model_params.xgb). Nəticələr: artifacts/models/tuning_results.json.
+**Feature set:** processed (02) + 23 ft_ (03, ApplicationFeatures+AggregateFeatures) = 242. Xaric: code_gender (decisions/0002), bureau_balance törəmələri — 9 sütun (decisions/0003; metadata.excluded_drift_features). ft_ qazancı: +0.0043 AUC (LightGBM).
+**Reproducibility:** seed 42, config configs/training.yaml, data_version 3f3e26a7c9e1fee9 (schema.json), kitabxanalar metadata.library_versions-da. Təlim GPU-da (XGBoost device=cuda) — bit-bit təkrar olunmaya bilər; bundle device=cpu ilə saxlanıb (CPU proqnozu GPU ilə ~1e-8 uyğun). OOF müqayisələri eyni device-da aparılıb.
+**Məhdudiyyətlər (model card):** zaman sütunu yoxdur → zaman-əsaslı split mümkün deyil; train/test paylanma sürüşməsi (docs/data/drift-report.md); yaş (days_birth) feature-dır və audit 05-indir (decisions/0002).
+**Köhnəlmiş bundle-lar (istifadə etmə):** lgbm-20261124-66653dd, lgbm-20261124-6bd7462, rf-20261124-5f1d8c0, xgb-20261124-7cdc858 (decisions/0003-dən əvvəl və ya tuning-siz); logreg/dummy-20261124-3e07321 baseline-dır (bb sütunları daxildir).
+**Alternativ:** lgbm-20261124-7cdc858 (default parametrlər, bb-siz) — lazım olsa kalibrasiya müqayisəsi üçün.
+**Sənin işin:** kalibrasiya (OOF), hədd, holdout, SHAP (background.parquet), fairness; son modeli təsdiqləsən mənə xəbər ver, metadata-nı (calibrated/validation_status) sən yeniləyirsən.
