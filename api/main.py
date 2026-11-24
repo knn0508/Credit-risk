@@ -3,11 +3,13 @@ import logging
 import os
 import time
 
-from fastapi import FastAPI, HTTPException
+import uuid
+
+from fastapi import FastAPI, HTTPException, Query
 
 from api import service
 from api.bundle import Bundle, BundleError, load_bundle
-from api.schemas import (BatchRequest, BatchResponse, ExplainResponse, ModelInfo,
+from api.schemas import (BatchRequest, BatchResponse, BatchRow, BatchSummary, RowError, ExplainResponse, ModelInfo,
                          Prediction, PredictRequest)
 
 log = logging.getLogger("credit_api")  # giriş dəyərləri YAZILMIR
@@ -61,12 +63,26 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
     @app.post("/predict/batch", response_model=BatchResponse)
     def batch(req: BatchRequest):
         t0 = time.perf_counter()
-        r = service.score(need(), req.applicants)
-        logged(r, t0)
-        return BatchResponse(results=r)
+        b = need()
+        rows: list[BatchRow] = []
+        preds: list[Prediction] = []
+        for i, a in enumerate(req.applicants):
+            try:
+                p = service.score(b, [a])[0]
+            except Exception as e:  # tək sətir xətası batch-i yıxmır; dəyər mesaja yazılmır
+                rows.append(BatchRow(index=i, status="error",
+                                     error=RowError(code="VALIDATION", message=type(e).__name__)))
+                continue
+            preds.append(p)
+            rows.append(BatchRow(index=i, status="ok", prediction=p))
+        logged(preds, t0)
+        n_ok = len(preds)
+        return BatchResponse(batch_id=str(uuid.uuid4()), results=rows,
+                             summary=BatchSummary(total=len(rows), ok=n_ok, failed=len(rows) - n_ok))
 
     @app.post("/explain", response_model=ExplainResponse)
-    def explain(req: PredictRequest):
+    def explain(req: PredictRequest, include_values: bool = False,
+                top_n: int = Query(5, ge=1, le=10)):
         # İzah src/explainability (05) tərəfindən hesablanır; hazır olana qədər 503.
         need()
         try:

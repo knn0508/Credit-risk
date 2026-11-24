@@ -1,5 +1,5 @@
 """Pydantic schemas — docs/contracts/prediction-api.md v0.1 və explanation.md."""
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 DISCLAIMER = "Qərar dəstəyidir; avtomatik təsdiq/rədd deyil."
@@ -35,6 +35,7 @@ class Factor(BaseModel):
 
 class Explanation(BaseModel):
     method: str
+    explanation_space: Literal["log_odds", "probability"] = "log_odds"
     base_value: float
     top_positive_factors: list[Factor]
     top_negative_factors: list[Factor]
@@ -45,8 +46,28 @@ class ExplainResponse(Prediction):
     explanation: Explanation
 
 
+class RowError(BaseModel):
+    code: str
+    message: str
+
+
+class BatchRow(BaseModel):
+    index: int
+    status: Literal["ok", "error"]
+    prediction: Optional[Prediction] = None
+    error: Optional[RowError] = None
+
+
+class BatchSummary(BaseModel):
+    total: int
+    ok: int
+    failed: int
+
+
 class BatchResponse(BaseModel):
-    results: list[Prediction]
+    batch_id: str
+    results: list[BatchRow]
+    summary: BatchSummary
 
 
 class ModelInfo(BaseModel):
