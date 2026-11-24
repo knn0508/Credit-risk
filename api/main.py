@@ -15,6 +15,27 @@ from api.schemas import (BatchRequest, BatchResponse, BatchRow, BatchSummary, Ro
 log = logging.getLogger("credit_api")  # giriş dəyərləri YAZILMIR
 
 
+def _score_batch(b: Bundle, applicants: list[dict]) -> list[Prediction | None]:
+    """Sürətli yol: bütün batch bir predict. Xəta olarsa pozuq sətirlər ucuz validasiya ilə tapılır,
+    qalanları yenə bir dəfəyə skorlanır; hələ də xəta olarsa sətir-sətir. None = etibarsız sətir."""
+    try:
+        return list(service.score(b, applicants))
+    except (ValueError, TypeError):
+        pass
+    good = [i for i, a in enumerate(applicants) if service.row_is_valid(b, a)]
+    out: list[Prediction | None] = [None] * len(applicants)
+    try:
+        for i, p in zip(good, service.score(b, [applicants[i] for i in good])):
+            out[i] = p
+    except (ValueError, TypeError):
+        for i in good:
+            try:
+                out[i] = service.score(b, [applicants[i]])[0]
+            except (ValueError, TypeError):
+                pass
+    return out
+
+
 def create_app(bundle: Bundle | None = None) -> FastAPI:
     app = FastAPI(title="Credit Risk Decision Support")
     state = {"bundle": bundle, "error": None}
@@ -57,6 +78,7 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         return ModelInfo(
             model_version=m["model_version"], algorithm=m["algorithm"], created_at=m["created_at"],
             metrics=m.get("metrics", {}), risk_policy_version=b.risk_policy.get("version"),
+            business_approval=b.risk_policy.get("business_approval"),
             validation_status=m["validation_status"], feature_count=m["feature_count"], feature_names=b.feature_names,
             excluded_protected_features=m.get("excluded_protected_features", []),
             dev_mode=b.dev_mode, warnings=b.warnings)
@@ -74,15 +96,7 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         b = need()
         rows: list[BatchRow] = []
         preds: list[Prediction] = []
-        try:  # sürətli yol: bütün batch bir dəfəyə
-            results: list[Prediction | None] = list(service.score(b, req.applicants))
-        except (ValueError, TypeError):  # bir sətir pozuqdursa: sətir-sətir, tək xəta batch-i yıxmır
-            results = []
-            for a in req.applicants:
-                try:
-                    results.append(service.score(b, [a])[0])
-                except (ValueError, TypeError):
-                    results.append(None)
+        results = _score_batch(b, req.applicants)
         for i, p in enumerate(results):
             if p is None:  # dəyər mesaja yazılmır
                 rows.append(BatchRow(index=i, status="error",

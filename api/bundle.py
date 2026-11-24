@@ -47,9 +47,17 @@ class Bundle:
     @property
     def warnings(self) -> list[str]:
         # açar yoxdur ≠ açar boş siyahıdır
+        w = []
         if "excluded_protected_features" not in self.metadata:
-            return ["excluded_protected_features metadata-da yoxdur"]
-        return []
+            w.append("excluded_protected_features metadata-da yoxdur")
+        if self.risk_policy.get("business_approval") == "pending":
+            w.append("Risk bandı hədləri fərziyyədir: biznes təsdiqi yoxdur")
+        return w
+
+    @property
+    def use_calibrator(self) -> bool:
+        """Calibrator yalnız fayl VAR və metadata.calibrated==true olanda tətbiq olunur (decision 01, 2026-11-24)."""
+        return self.calibrator is not None and self.metadata.get("calibrated") is True
 
 
 def load_bundle(path: str | os.PathLike, allow_dev: bool = False) -> Bundle:
