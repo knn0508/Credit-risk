@@ -38,7 +38,6 @@ def test_values_and_order():
 def test_employed_anomaly_and_zero_denominator():
     d = make(days_employed=[365243, -365, -365], amt_income_total=[50000.0, 0.0, 50000.0])
     out = ApplicationFeatures().fit(d).transform(d)
-    assert out.ft_employed_anom.tolist() == [1, 0, 0]
     assert np.isnan(out.ft_employed_years.iloc[0]) and np.isnan(out.ft_employed_age_ratio.iloc[0])
     assert np.isnan(out.ft_credit_income_ratio.iloc[1])
 
@@ -62,7 +61,8 @@ def test_no_target_needed_and_index_kept():
 def test_processed_contract_nan_with_flag():
     d = make(days_employed=[np.nan, -365, -365], days_employed_is_anomalous=[1, 0, 0])
     out = ApplicationFeatures().fit(d).transform(d)
-    assert out.ft_employed_anom.tolist() == [1, 0, 0]
+    assert np.isnan(out.ft_employed_years.iloc[0])
+    assert "ft_employed_anom" not in out.columns  # dublikat: days_employed_is_anomalous
     assert np.isnan(out.ft_employed_years.iloc[0])
 
 
