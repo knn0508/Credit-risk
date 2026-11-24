@@ -47,8 +47,10 @@ def logreg_for(X: pd.DataFrame, seed: int, class_weight=None):
         ("cat", Pipeline([("imp", SimpleImputer(strategy="most_frequent")),
                           ("oh", OneHotEncoder(handle_unknown="ignore", min_frequency=50))]), cat),
     ])
-    return Pipeline([("pre", pre), ("clf", LogisticRegression(max_iter=2000, class_weight=class_weight,
-                                                               random_state=seed))])
+    # 03 outlier qərarı: yalnız linear modeldə Winsorizer (1/99, sərhədlər train fold-da), imputer-dən əvvəl
+    from src.features import Winsorizer
+    return Pipeline([("win", Winsorizer(columns=num)), ("pre", pre),
+                     ("clf", LogisticRegression(max_iter=2000, class_weight=class_weight, random_state=seed))])
 
 
 def main():
