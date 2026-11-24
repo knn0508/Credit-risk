@@ -4,6 +4,7 @@ Usage: python -m src.data.build [--config configs/data.yaml]
 Deterministic (no randomness). Train and test go through the identical code path.
 """
 import argparse
+import hashlib
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -70,6 +71,26 @@ def fill_after_join(df, lineage):
     return df
 
 
+RAW_TABLES = ("application_train", "application_test", "bureau", "bureau_balance", "previous_application",
+              "POS_CASH_balance", "credit_card_balance", "installments_payments")
+
+
+def file_fingerprint(path, chunk=1 << 22):
+    """Streaming sha256 + size (large CSVs are never loaded whole)."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while block := f.read(chunk):
+            h.update(block)
+    return {"bytes": Path(path).stat().st_size, "sha256": h.hexdigest()}
+
+
+def data_version(raw_dir):
+    """Per-file fingerprints + one combined id (sha256 over sorted `name:sha256`) -> bundle metadata.data_version."""
+    files = {t: file_fingerprint(Path(raw_dir) / f"{t}.csv") for t in RAW_TABLES}
+    combined = hashlib.sha256("\n".join(f"{t}:{files[t]['sha256']}" for t in sorted(files)).encode()).hexdigest()
+    return {"data_version": combined[:16], "data_sha256": combined, "raw_files": files}
+
+
 def _git_commit():
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
@@ -128,6 +149,7 @@ def build(cfg):
 
     train.to_parquet(out_dir / "application_train.parquet", index=False)
     test.to_parquet(out_dir / "application_test.parquet", index=False)
+    report.update(data_version(raw))
     write_schema(train, test, lineage, out_dir / "schema.json", report)
     return train, test
 
