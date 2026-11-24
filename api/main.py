@@ -8,11 +8,32 @@ import uuid
 from fastapi import FastAPI, HTTPException, Query
 
 from api import service
-from api.bundle import Bundle, BundleError, load_bundle
+from api.bundle import Bundle, BundleError, ExplainUnavailable, load_bundle
 from api.schemas import (BatchRequest, BatchResponse, BatchRow, BatchSummary, RowError, ExplainResponse, ModelInfo,
                          Prediction, PredictRequest)
 
 log = logging.getLogger("credit_api")  # giriş dəyərləri YAZILMIR
+
+
+def _score_batch(b: Bundle, applicants: list[dict]) -> list[Prediction | None]:
+    """Sürətli yol: bütün batch bir predict. Xəta olarsa pozuq sətirlər ucuz validasiya ilə tapılır,
+    qalanları yenə bir dəfəyə skorlanır; hələ də xəta olarsa sətir-sətir. None = etibarsız sətir."""
+    try:
+        return list(service.score(b, applicants))
+    except (ValueError, TypeError):
+        pass
+    good = [i for i, a in enumerate(applicants) if service.row_is_valid(b, a)]
+    out: list[Prediction | None] = [None] * len(applicants)
+    try:
+        for i, p in zip(good, service.score(b, [applicants[i] for i in good])):
+            out[i] = p
+    except (ValueError, TypeError):
+        for i in good:
+            try:
+                out[i] = service.score(b, [applicants[i]])[0]
+            except (ValueError, TypeError):
+                pass
+    return out
 
 
 def create_app(bundle: Bundle | None = None) -> FastAPI:
@@ -33,6 +54,13 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
             raise HTTPException(503, state["error"] or "bundle yoxdur")
         return state["bundle"]
 
+    def score_one(b: Bundle, applicant: dict):
+        """Tip/dəyər xətası → 422 (mesajda dəyər yoxdur)."""
+        try:
+            return service.score(b, [applicant])[0]
+        except (ValueError, TypeError) as e:
+            raise HTTPException(422, f"applicant dəyərləri etibarsızdır ({type(e).__name__})")
+
     def logged(preds: list[Prediction], t0: float) -> None:
         ms = (time.perf_counter() - t0) * 1000
         for p in preds:
@@ -50,6 +78,7 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         return ModelInfo(
             model_version=m["model_version"], algorithm=m["algorithm"], created_at=m["created_at"],
             metrics=m.get("metrics", {}), risk_policy_version=b.risk_policy.get("version"),
+            business_approval=b.risk_policy.get("business_approval"),
             validation_status=m["validation_status"], feature_count=m["feature_count"], feature_names=b.feature_names,
             excluded_protected_features=m.get("excluded_protected_features", []),
             dev_mode=b.dev_mode, warnings=b.warnings)
@@ -57,9 +86,9 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
     @app.post("/predict", response_model=Prediction)
     def predict(req: PredictRequest):
         t0 = time.perf_counter()
-        r = service.score(need(), [req.applicant])
-        logged(r, t0)
-        return r[0]
+        r = score_one(need(), req.applicant)
+        logged([r], t0)
+        return r
 
     @app.post("/predict/batch", response_model=BatchResponse)
     def batch(req: BatchRequest):
@@ -67,15 +96,14 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         b = need()
         rows: list[BatchRow] = []
         preds: list[Prediction] = []
-        for i, a in enumerate(req.applicants):
-            try:
-                p = service.score(b, [a])[0]
-            except Exception as e:  # tək sətir xətası batch-i yıxmır; dəyər mesaja yazılmır
+        results = _score_batch(b, req.applicants)
+        for i, p in enumerate(results):
+            if p is None:  # dəyər mesaja yazılmır
                 rows.append(BatchRow(index=i, status="error",
-                                     error=RowError(code="VALIDATION", message=type(e).__name__)))
-                continue
-            preds.append(p)
-            rows.append(BatchRow(index=i, status="ok", prediction=p))
+                                     error=RowError(code="VALIDATION", message="sətir dəyərləri etibarsızdır")))
+            else:
+                preds.append(p)
+                rows.append(BatchRow(index=i, status="ok", prediction=p))
         logged(preds, t0)
         n_ok = len(preds)
         return BatchResponse(batch_id=str(uuid.uuid4()), results=rows,
@@ -84,13 +112,17 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
     @app.post("/explain", response_model=ExplainResponse)
     def explain(req: PredictRequest, include_values: bool = False,
                 top_n: int = Query(5, ge=1, le=10)):
-        # İzah src/explainability (05) tərəfindən hesablanır; hazır olana qədər 503.
-        need()
+        t0 = time.perf_counter()
+        b = need()
         try:
-            from src.explainability import explain_one  # noqa: F401
-        except ImportError:
-            raise HTTPException(503, "izah modulu (Agent 05) hazır deyil")
-        raise HTTPException(503, "izah inteqrasiyası kontrakt dəqiqləşəndən sonra")
+            ex = b.explainer()
+        except ExplainUnavailable as e:
+            raise HTTPException(503, str(e))
+        pred = score_one(b, req.applicant)
+        X, _ = service.to_frame(b, [req.applicant])
+        expl = ex.explain_row(X, top_n=top_n, include_values=include_values)  # fərdi izah loga yazılmır
+        logged([pred], t0)
+        return ExplainResponse(**pred.model_dump(), explanation=expl)
 
     return app
 

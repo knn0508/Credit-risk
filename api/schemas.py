@@ -29,7 +29,7 @@ class Prediction(BaseModel):
 class Factor(BaseModel):
     feature_name: str
     display_name: str
-    value: Optional[float] = None
+    value: Optional[Any] = None
     contribution: float
 
 
@@ -76,6 +76,7 @@ class ModelInfo(BaseModel):
     created_at: str
     metrics: dict[str, float]
     risk_policy_version: Optional[str]
+    business_approval: Optional[str] = None
     validation_status: str
     feature_count: int
     feature_names: list[str]

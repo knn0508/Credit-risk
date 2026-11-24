@@ -35,9 +35,11 @@ def test_bundle_round_trip_feature_order(tmp_path):
     model = baselines.logreg().fit(X, y)
     d = bundle.save_bundle(tmp_path, model, list(X.columns), oof, protocol.make_split(ids, y, 42),
                            algorithm="logreg", seed=42, config_path="configs/training.yaml",
-                           data_version="x", metrics=m, positive_rate=float(y.mean()))
+                           data_version="x", metrics=m, positive_rate=float(y.mean()), X_train=X)
     model2, names, meta = bundle.load_bundle(d)
     assert names == list(X.columns) and meta["validation_status"] == "unvalidated"
+    bg = pd.read_parquet(d / "background.parquet")
+    assert list(bg.columns) == names and len(bg) == 600
     np.testing.assert_allclose(model2.predict_proba(X[names])[:, 1], model.predict_proba(X)[:, 1])
 
 
@@ -74,3 +76,16 @@ def test_excluded_features_match_features_module():
 def test_data_version_from_schema(tmp_path):
     (tmp_path / "s.json").write_text('{"meta": {"data_version": "abc123"}}')
     assert bundle.data_version(tmp_path / "s.json") == "abc123"
+
+
+def test_drift_prefixes_excluded(tmp_path):
+    from src.models import train_baseline as tb
+    X, y, ids = _data(100)
+    df = X.assign(sk_id_curr=ids, target=y, bureau_months_count_sum=1.0, bureau_dpd_share_max=0.0,
+                  bureau_has_bb_sum=1, bureau_credit_sum=2.0)
+    df.to_parquet(tmp_path / "t.parquet")
+    cfg = {"train_data": str(tmp_path / "t.parquet"), "id_col": "sk_id_curr", "target_col": "target",
+           "excluded_protected_features": [], "excluded_drift_prefixes": ["bureau_months_", "bureau_dpd_", "bureau_has_bb_sum"]}
+    Xf, _, _ = tb.load_xy(cfg)
+    assert "bureau_credit_sum" in Xf and not any(c.startswith(("bureau_months_", "bureau_dpd_", "bureau_has_bb")) for c in Xf)
+    assert tb.excluded_drift_features(cfg) == ["bureau_dpd_share_max", "bureau_has_bb_sum", "bureau_months_count_sum"]

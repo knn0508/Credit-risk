@@ -14,6 +14,34 @@ def _band(p: float, policy: dict) -> str:
     return band(p, policy["low_max"], policy["medium_max"])
 
 
+def _coerce(b: Bundle, df: pd.DataFrame) -> pd.DataFrame:
+    """JSON null → object dtype problemini həll edir: tipləri background (train) dtype-larına gətirir.
+    Rəqəm sütununa mətn gəlsə ValueError (→ 422)."""
+    ref = b.ref_dtypes()
+    for c in df.columns:
+        t = ref.get(c)
+        if t is not None and pd.api.types.is_numeric_dtype(t) and not pd.api.types.is_bool_dtype(t):
+            df[c] = pd.to_numeric(df[c], errors="raise").astype("float64")
+        elif t is not None and not pd.api.types.is_numeric_dtype(t):
+            df[c] = df[c].astype(t)  # kateqorik: train dtype (null → NaN/NA)
+        elif df[c].isna().all():
+            df[c] = df[c].astype("float64")  # referans yoxdur, bütün-null: float NaN
+    return df
+
+
+def row_is_valid(b: Bundle, a: dict) -> bool:
+    """DataFrame qurmadan ucuz yoxlama: background-a görə rəqəm sütunlarında rəqəm/null olmalıdır."""
+    for c, t in b.ref_dtypes().items():
+        v = a.get(c)
+        if v is None or not pd.api.types.is_numeric_dtype(t) or pd.api.types.is_bool_dtype(t):
+            continue
+        try:
+            float(v)
+        except (ValueError, TypeError):
+            return False
+    return True
+
+
 def to_frame(b: Bundle, applicants: list[dict]) -> tuple[pd.DataFrame, list[list[str]]]:
     """Sütunları feature_names sırasına salır; çatışan → NaN+warning, naməlum → ignore+warning."""
     known = set(b.feature_names)
@@ -28,13 +56,13 @@ def to_frame(b: Bundle, applicants: list[dict]) -> tuple[pd.DataFrame, list[list
             w.append(f"{len(unknown)} naməlum sahə nəzərə alınmadı")
         rows.append({f: a.get(f) for f in b.feature_names})
         warns.append(w)
-    return pd.DataFrame(rows, columns=b.feature_names), warns
+    return _coerce(b, pd.DataFrame(rows, columns=b.feature_names)), warns
 
 
 def score(b: Bundle, applicants: list[dict]) -> list[Prediction]:
     X, warns = to_frame(b, applicants)
     p = b.model.predict_proba(X)[:, 1]
-    calibrated = b.calibrator is not None
+    calibrated = b.use_calibrator
     if calibrated:
         p = b.calibrator.predict(p)
     now = datetime.now(timezone.utc).isoformat()
@@ -42,7 +70,7 @@ def score(b: Bundle, applicants: list[dict]) -> list[Prediction]:
     for pi, w in zip(p, warns):
         w = list(w) + b.warnings
         if not calibrated:
-            w.append("calibrator yoxdur: xam ehtimal istifadə olunur")
+            w.append("calibrator tətbiq olunmur (yoxdur və ya metadata.calibrated!=true): xam ehtimal istifadə olunur")
         if b.dev_mode:
             w.append("DEV rejimi: bundle təsdiqlənməyib")
         out.append(Prediction(

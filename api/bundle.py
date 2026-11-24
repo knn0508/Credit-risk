@@ -8,6 +8,10 @@ from typing import Any, Optional
 import joblib
 
 
+class ExplainUnavailable(Exception):
+    """İzah qurula bilmir (→ 503)."""
+
+
 class BundleError(Exception):
     """Bundle yoxdur, natamamdır və ya təsdiqsizdir (→ 503)."""
 
@@ -20,13 +24,40 @@ class Bundle:
     metadata: dict
     risk_policy: dict
     dev_mode: bool
+    path: Optional[Path] = None
+    _explainer: Any = None
+    _dtypes: Any = None
+
+    def ref_dtypes(self) -> dict:
+        """background.parquet-dən sütun dtype-ları (train/inference eyni tiplər); yoxdursa {}."""
+        if self._dtypes is None:
+            self._dtypes = {}
+            if self.path and (self.path / "background.parquet").exists():
+                import pandas as pd
+                bg = pd.read_parquet(self.path / "background.parquet")
+                self._dtypes = {c: bg[c].dtype for c in bg.columns}
+        return self._dtypes
+
+    def explainer(self):
+        """Lazy ShapExplainer (src/explainability, 05). background.parquet yoxdursa/uyğunsuzdursa ExplainUnavailable."""
+        if self._explainer is None:
+            self._explainer = _build_explainer(self)
+        return self._explainer
 
     @property
     def warnings(self) -> list[str]:
         # açar yoxdur ≠ açar boş siyahıdır
+        w = []
         if "excluded_protected_features" not in self.metadata:
-            return ["excluded_protected_features metadata-da yoxdur"]
-        return []
+            w.append("excluded_protected_features metadata-da yoxdur")
+        if self.risk_policy.get("business_approval") == "pending":
+            w.append("Risk bandı hədləri fərziyyədir: biznes təsdiqi yoxdur")
+        return w
+
+    @property
+    def use_calibrator(self) -> bool:
+        """Calibrator yalnız fayl VAR və metadata.calibrated==true olanda tətbiq olunur (decision 01, 2026-11-24)."""
+        return self.calibrator is not None and self.metadata.get("calibrated") is True
 
 
 def load_bundle(path: str | os.PathLike, allow_dev: bool = False) -> Bundle:
@@ -49,4 +80,19 @@ def load_bundle(path: str | os.PathLike, allow_dev: bool = False) -> Bundle:
     if not approved and not allow_dev:
         raise BundleError(
             f"bundle təsdiqsizdir (status={meta.get('validation_status')}); DEV rejimi söndürülüb")
-    return Bundle(model, calibrator, names, meta, policy, dev_mode=not approved)
+    return Bundle(model, calibrator, names, meta, policy, dev_mode=not approved, path=p)
+
+
+def _build_explainer(b: Bundle):
+    import pandas as pd
+    from src.explainability.shap_explainer import ShapExplainer, load_display_names
+    bg_path = b.path / "background.parquet" if b.path else None
+    if bg_path is None or not bg_path.exists():
+        raise ExplainUnavailable("bundle-da background.parquet yoxdur")
+    bg = pd.read_parquet(bg_path)
+    if list(bg.columns) != b.feature_names:
+        raise ExplainUnavailable("background sütunları feature_names ilə uyğun deyil")
+    try:
+        return ShapExplainer(b.model, bg, load_display_names())
+    except (KeyError, AttributeError, ValueError) as e:
+        raise ExplainUnavailable(f"model izah üçün uyğun deyil: {type(e).__name__}") from e

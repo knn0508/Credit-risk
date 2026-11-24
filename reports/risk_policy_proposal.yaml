@@ -1,11 +1,15 @@
 # Agent 05 təklifi (status: proposal). FƏRZİYYƏ: biznes təsdiqi yoxdur; 01 configs/risk_policy.yaml-a köçürür.
-# Mənbə: logreg-20261124-3e07321 baseline, OOF (246 008 sətir), isotonic kalibrasiya. Holdout istifadə olunmayıb.
-# Model dəyişsə hədlər yenidən seçilməlidir.
+# Mənbə: xgb-20261124-a9b6c81 (aparıcı), OOF (246 008 sətir), Platt kalibrasiya; hədlər holdout-dan əvvəl dondurulub.
 status: proposal
-version: proposal-0.1-logreg
-model_version: logreg-20261124-3e07321
-thresholds: {low_max: 0.0306, medium_max: 0.1441}
+version: proposal-0.2-xgb
+model_version: xgb-20261124-a9b6c81
+thresholds: {low_max: 0.0274, medium_max: 0.1915}
 oof_band_summary:   # share / default_rate / lift (baza 8.07%)
-  Low:    {share: 0.345, default_rate: 0.0202, lift: 0.25}
-  Medium: {share: 0.505, default_rate: 0.0741, lift: 0.92}
-  High:   {share: 0.150, default_rate: 0.2425, lift: 3.00}
+  Low:    {share: 0.300, default_rate: 0.0150, lift: 0.19}
+  Medium: {share: 0.600, default_rate: 0.0772, lift: 0.96}
+  High:   {share: 0.100, default_rate: 0.2988, lift: 3.70}
+holdout_band_summary:   # 61 503 sətir, hədlər dəyişdirilməyib
+  Low:    {share: 0.300, default_rate: 0.0153, lift: 0.19}
+  Medium: {share: 0.601, default_rate: 0.0760, lift: 0.94}
+  High:   {share: 0.099, default_rate: 0.3080, lift: 3.81}
+note: "Low 30% / High 10% payı biznes tutumu ilə uzlaşdırılmalıdır; avtomatik təsdiq/rədd yoxdur."
