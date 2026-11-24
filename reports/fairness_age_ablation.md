@@ -17,7 +17,7 @@ Gender (High): F 8.5% / 8.5%, M 12.9% / 12.9% — dəyişməyib.
 ## Nəticə
 1. **Yaşı çıxarmaq band fərqini azaltmır.** <30 vs 60+ High nisbəti ~6.5× (yaşlı) → ~7.3× (yaşsız); <30 qrupunun High payı hətta 17.9% → 19.8%-ə artır. Real defolt fərqi cəmi 2.3×-dir, yəni model fərqi yenə böyüdür.
 2. **Proksilər yaşı daşıyır.** Qalan feature-lar (ext_source_*, ft_employed_age_ratio — yaşdan törəmədir və çıxarılmayıb, days_employed, təhsil/peşə/ailə statusu və s.) yaş siqnalını bərpa edir. Yaşın birbaşa çıxarılması ədalətlilik baxımından səmərəsizdir.
-3. **Kalibrasiya yaşsız variantda bir qədər pisləşir** (<30 qrupu +0.0064 az-qiymətləndirmə əvəzinə çox-qiymətləndirmə, 50–59 +0.0039), AUC itkisi kiçikdir, PR itkisi bir qədər aydındır.
+3. **Kalibrasiya yaşsız variantda bir qədər pisləşir** (gap = orta p − defolt: <30 qrupu +0.0064 çox-qiymətləndirmə, 30–39 −0.0045 az-qiymətləndirmə; |gap| ≤ 0.0064), AUC itkisi kiçikdir, PR itkisi bir qədər aydındır.
 4. Yaşsız variant ft_employed_age_ratio ilə birlikdə: OOF 0.7853/0.2744 (04), yəni fərq yoxdur — proksi təsirini yoxlamaq üçün 04 onu da çıxarıb bundle yarada bilər (bu hesabatda ölçülməyib).
 
 ## Tövsiyə (qərar 01/insan)
