@@ -91,10 +91,18 @@ def explanation():
         st.caption(x["note"])
 
 
+SAMPLE = os.path.join(os.path.dirname(__file__), "..", "docs", "data", "sample-applicants.json")
+
+
 def batch():
     f = st.file_uploader("CSV (sütunlar = feature_name)", type="csv")
-    if f and st.button("Skorla"):
-        df = pd.read_csv(f)
+    demo = st.checkbox("Sintetik demo nümunəsi istifadə et (real müraciət deyil)")
+    if (f or demo) and st.button("Skorla"):
+        if demo:
+            with open(SAMPLE, encoding="utf-8") as fh:
+                df = pd.DataFrame([r["applicant"] for r in json.load(fh)["requests"]])
+        else:
+            df = pd.read_csv(f)
         if len(df) > 10_000:
             st.error("Maksimum 10 000 sətir")
             return

@@ -112,3 +112,11 @@ def test_approved_without_protected_key_rejected(tmp_path):
     with pytest.raises(BundleError):
         load_bundle(p)
     assert TestClient(create_app(load_bundle(make_bundle(tmp_path / "y", status="approved")))).get("/health").status_code == 200
+
+
+def test_sample_applicants_batch(client):
+    import json
+    from pathlib import Path
+    reqs = json.loads((Path(__file__).parents[2] / "docs/data/sample-applicants.json").read_text())["requests"]
+    r = client.post("/predict/batch", json={"applicants": [x["applicant"] for x in reqs]}).json()
+    assert r["summary"] == {"total": 20, "ok": 20, "failed": 0}
