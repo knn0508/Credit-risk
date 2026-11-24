@@ -47,3 +47,6 @@ Testlər: metrik funksiyaları, band sərhədləri (≤ daxil), SHAP shape/ardı
 - Subgroup sütunları kiçik hərflə (`code_gender`, `name_education_type`, `name_family_status`, `days_birth`). `code_gender`
   'XNA'→NaN: audit-də ayrıca "unknown" qrupu; kiçik qruplar (n < 100 və ya <10 müsbət) üçün AUC hesablanmır, "insufficient" yazılır.
 - `code_gender` model feature-ı deyil (decisions/0002); audit üçün processed datadan SK_ID_CURR ilə join edilir (join-dən əvvəl/sonra sətir sayı yoxlanır).
+- Real data yoxlandı (2026-11-24): processed-də açar/target kiçik hərflidir (`sk_id_curr`, `target`); OOF faylı kontraktda
+  `SK_ID_CURR`/`TARGET`. 05 kodu hər iki yazılışı qəbul edib adları kiçik hərfə normallaşdırır; 04-dən adın dəqiqləşdirilməsi istənib.
+  `code_gender`: F 202 448, M 105 059, NaN 4 → "unknown" qrupu n<100 olduğu üçün "insufficient".
