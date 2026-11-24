@@ -1,6 +1,6 @@
 # İzah kontraktı — QARALAMA v0.1
 ```json
-{"method":"shap_tree|shap_linear","base_value":0.0,
+{"method":"shap_tree|shap_linear","explanation_space":"log_odds","base_value":0.0,
  "top_positive_factors":[{"feature_name":"ext_source_2","display_name":"External score 2","value":0.31,"contribution":0.042}],
  "top_negative_factors":[{"feature_name":"...","display_name":"...","value":0,"contribution":-0.03}],
  "note":"SHAP model davranışını izah edir, səbəb-nəticə sübutu deyil."}
