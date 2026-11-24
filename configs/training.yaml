@@ -2,3 +2,11 @@
 random_seed: 42
 cv_folds: 5
 primary_metrics: [roc_auc, pr_auc]
+holdout_size: 0.2
+id_col: sk_id_curr
+target_col: target
+# decisions/0002: model feature_names-də olmur (processed-də qalır)
+excluded_protected_features: [code_gender]
+train_data: data/processed/application_train.parquet
+models_dir: artifacts/models
+use_ft: true   # 03-ün 23 ft_ feature-ı (src.features)
