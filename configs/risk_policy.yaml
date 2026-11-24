@@ -1,0 +1,5 @@
+# Agent 05 təklif edir, Agent 01 təsdiqləyir. Biznes təsdiqi olmadan rəqəmlər
+# yalnız FƏRZİYYƏDİR.
+status: proposal
+version: null
+thresholds: {low_max: null, medium_max: null}

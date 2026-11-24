@@ -1,0 +1,14 @@
+# Secret / data / böyük artefaktlar Git-ə girmir
+.env
+/data
+/artifacts
+/.agents
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+# Lokal
+CLAUDE.local.md
+.claude/settings.local.json
+.DS_Store

@@ -1,0 +1,6 @@
+# Sahib: Agent 02 (Agent 01 təsdiqləyir)
+raw_dir: data/raw
+interim_dir: data/interim
+processed_dir: data/processed
+key: SK_ID_CURR
+target: TARGET

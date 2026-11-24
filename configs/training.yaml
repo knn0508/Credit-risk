@@ -1,0 +1,4 @@
+# Sahib: Agent 04 (protokol Agent 01/05 ilə razılaşdırılır)
+random_seed: 42
+cv_folds: 5
+primary_metrics: [roc_auc, pr_auc]
