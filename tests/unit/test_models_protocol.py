@@ -64,3 +64,8 @@ def test_benchmark_models_fit_predict_in_pipeline():
                     ("catboost", {"iterations": 20}), ("rf", {"n_estimators": 20})]:
         _, m, _ = cv.run_cv(benchmark.make(name, X, 42, p), X, y, ids, 42, 3)
         assert m["roc_auc"] > 0.6, name
+
+
+def test_excluded_features_match_features_module():
+    from src.features import EXCLUDED_PROTECTED_FEATURES
+    assert protocol.load_config()["excluded_protected_features"] == EXCLUDED_PROTECTED_FEATURES
