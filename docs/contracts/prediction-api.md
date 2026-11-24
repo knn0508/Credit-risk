@@ -21,3 +21,4 @@ naməlum sahə → ignore + warning; tip xətası → 422.
 Tək sətir xətası bütün batch-i yıxmır (HTTP 200); bütün sorğu səviyyəli xəta (>10 000 sətir, bundle yox) 422/503. Hər uğurlu sətirin öz prediction_id-si var; batch-in ayrıca `batch_id` (uuid4) sahəsi olur.
 **/explain:** query param `include_values` (default `false`) — feature `value` yalnız true olanda qaytarılır; `top_n` default 5, max 10.
 Hər iki halda giriş dəyərləri loga yazılmır.
+**/model-info (v0.3):** cavaba `feature_names` (sıralı siyahı, bundle-dan) və `excluded_protected_features` əlavə olunur; UI formu bunlardan qurulur.
