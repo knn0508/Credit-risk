@@ -25,7 +25,7 @@ def git_sha() -> str:
 
 
 def save_bundle(root, model, feature_names, oof, split, *, algorithm, seed, config_path, data_version,
-                metrics, positive_rate, X_train, excluded_protected_features=(), excluded_drift_features=(), device="cpu", preprocessor=None):
+                metrics, positive_rate, X_train, excluded_protected_features=(), excluded_drift_features=(), device="cpu", extra_excluded_features=(), preprocessor=None):
     import importlib.metadata as im
     import numpy, pandas, sklearn
     libs = {"numpy": numpy.__version__, "pandas": pandas.__version__, "scikit-learn": sklearn.__version__}
@@ -51,8 +51,8 @@ def save_bundle(root, model, feature_names, oof, split, *, algorithm, seed, conf
             "train_rows": len(oof), "positive_rate": positive_rate, "feature_count": len(feature_names),
             "metrics": metrics, "calibrated": False, "validation_status": "unvalidated", "approved_by": None,
             "risk_policy_version": None, "excluded_protected_features": list(excluded_protected_features),
-            "excluded_drift_features": list(excluded_drift_features), "excluded_drift_decision": "decisions/0003",
-            "device": device if algorithm in ("xgb", "catboost") else "cpu", "library_versions": libs}
+            "excluded_drift_features": list(excluded_drift_features), "excluded_drift_decision": "decisions/0003", "extra_excluded_features": list(extra_excluded_features),
+            "device": device if algorithm.split("-")[0] in ("xgb", "catboost") else "cpu", "library_versions": libs}
     (d / "metadata.json").write_text(json.dumps(meta, indent=2))
     return d
 

@@ -67,6 +67,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=["lgbm", "xgb", "catboost", "rf"])
     ap.add_argument("--config", default=protocol.DEFAULT_CONFIG)
+    ap.add_argument("--drop", nargs="*", default=[], help="əlavə xaric ediləcək feature-lar (ablation, məs. yaş)")
+    ap.add_argument("--tag", default="", help="algorithm adına əlavə (ayrıca model_version), məs. -noage")
     ap.add_argument("--save", action="store_true", help="hər model üçün bundle yaz")
     a = ap.parse_args()
     cfg = protocol.load_config(a.config)
@@ -74,6 +76,10 @@ def main():
     device = resolve_device(cfg.get("device", "auto"))
     print("device:", device, flush=True)
     X, y, ids = load_xy(cfg)
+    missing = [c for c in a.drop if c not in X.columns]
+    if missing:
+        raise SystemExit(f"drop sütunları yoxdur: {missing}")
+    X = X.drop(columns=a.drop)
     split = protocol.make_split(ids, y, seed, cfg["holdout_size"])
     tr = ids.isin(set(split["train_ids"])).to_numpy()
     Xt, yt, it = X[tr].reset_index(drop=True), y[tr].reset_index(drop=True), ids[tr].reset_index(drop=True)
@@ -91,12 +97,13 @@ def main():
             if name == "xgb":  # bundle GPU-suz hostda (06/Docker) yüklənə bilsin; proqnoz eynidir
                 model[-1].get_booster().set_param({"device": "cpu"})
                 model[-1].set_params(device="cpu")
-            bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=name, seed=seed,
+            bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=name + a.tag, seed=seed,
                                config_path=a.config, data_version=bundle.data_version(),
                                metrics={k: m[k] for k in ("roc_auc", "pr_auc")}, positive_rate=float(yt.mean()), X_train=Xt,
                                excluded_protected_features=cfg["excluded_protected_features"],
-                           excluded_drift_features=excluded_drift_features(cfg), device=device)
-    out = Path(cfg["models_dir"]) / "benchmark_results.json"
+                           excluded_drift_features=excluded_drift_features(cfg), device=device,
+                               extra_excluded_features=a.drop)
+    out = Path(cfg["models_dir"]) / f"benchmark_results{a.tag}.json"
     out.write_text(json.dumps(rows, indent=2))
     print(pd.DataFrame(rows).to_string(index=False))
 
