@@ -52,7 +52,7 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
             metrics=m.get("metrics", {}), risk_policy_version=b.risk_policy.get("version"),
             validation_status=m["validation_status"], feature_count=m["feature_count"], feature_names=b.feature_names,
             excluded_protected_features=m.get("excluded_protected_features", []),
-            dev_mode=b.dev_mode)
+            dev_mode=b.dev_mode, warnings=b.warnings)
 
     @app.post("/predict", response_model=Prediction)
     def predict(req: PredictRequest):
