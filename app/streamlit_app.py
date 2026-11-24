@@ -26,6 +26,8 @@ def call(method: str, path: str, **kw):
 def banner(info: dict) -> None:
     if info.get("dev_mode"):
         st.warning(f"DEV/MOCK rejimi: model təsdiqlənməyib (status={info['validation_status']}). Nəticələr real qərar üçün deyil.")
+    for w in info.get("warnings", []):
+        st.warning(w)
     st.caption(DISCLAIMER)
 
 

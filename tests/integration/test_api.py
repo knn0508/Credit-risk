@@ -180,3 +180,26 @@ def test_batch_fast_path_matches_row_by_row(client):
     r = client.post("/predict/batch", json={"applicants": rows}).json()
     single = [client.post("/predict", json={"applicant": a}).json()["prediction_probability"] for a in rows]
     assert [x["prediction"]["prediction_probability"] for x in r["results"]] == pytest.approx(single)
+
+
+def test_business_approval_pending_warns_everywhere(tmp_path):
+    p = make_bundle(tmp_path / "bp", status="approved", business_approval="pending")
+    c = TestClient(create_app(load_bundle(p)))
+    info = c.get("/model-info").json()
+    assert info["business_approval"] == "pending" and any("biznes təsdiqi yoxdur" in w for w in info["warnings"])
+    for path in ("/predict", "/explain"):
+        assert any("biznes təsdiqi yoxdur" in w for w in c.post(path, json={"applicant": OK}).json()["warnings"])
+    b = c.post("/predict/batch", json={"applicants": [OK]}).json()
+    assert any("biznes təsdiqi yoxdur" in w for w in b["results"][0]["prediction"]["warnings"])
+
+
+def test_calibrator_not_applied_when_metadata_false(tmp_path):
+    raw = make_bundle(tmp_path / "r", calibrated=False)  # calibrator faylı yoxdur
+    p = make_bundle(tmp_path / "m", meta_calibrated=False)  # fayl VAR, metadata false
+    def run(path):
+        return TestClient(create_app(load_bundle(path, allow_dev=True))).post("/predict", json={"applicant": OK}).json()
+    j = run(p)
+    assert j["calibrated"] is False and any("calibrator" in w for w in j["warnings"])
+    assert j["prediction_probability"] == pytest.approx(run(tmp_path / "m")["prediction_probability"])
+    assert run(tmp_path / "m")["calibrated"] is False and run(raw)["calibrated"] is False
+    assert run(make_bundle(tmp_path / "ok"))["calibrated"] is True
