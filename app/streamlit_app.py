@@ -5,6 +5,7 @@ import os
 import httpx
 import pandas as pd
 import streamlit as st
+import yaml
 
 API = os.environ.get("API_URL", "http://localhost:8000")
 DISCLAIMER = ("Qərar dəstəyidir; avtomatik təsdiq/rədd deyil. Yalnız demo/prototip; real kredit qərarları üçün deyil. SHAP model davranışını izah edir, səbəb-nəticə sübutu deyil.")
@@ -44,36 +45,127 @@ def overview():
         st.table(pd.DataFrame(info["metrics"].items(), columns=["metrik", "dəyər"]))
 
 
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+CORE = ["ext_source_1", "ext_source_2", "ext_source_3", "amt_credit", "amt_annuity", "amt_goods_price",
+        "amt_income_total", "days_birth", "days_employed", "name_education_type", "name_contract_type",
+        "name_income_type", "own_car_age", "cnt_fam_members", "cnt_children"]  # SHAP top (validation report) əsaslı
+MIN_FILLED = 5
+
+
+@st.cache_data
+def _load(rel: str):
+    p = os.path.join(ROOT, rel)
+    if not os.path.exists(p):
+        return None
+    with open(p, encoding="utf-8") as f:
+        return yaml.safe_load(f) if p.endswith(".yaml") else json.load(f)
+
+
+def _schema() -> dict:
+    d = _load("docs/data/sample-schema.json")
+    return {f["name"]: f for f in d["fields"]} if d else {}
+
+
+def _samples() -> list:
+    d = _load("docs/data/sample-applicants.json")
+    return d["requests"] if d else []
+
+
+def _widget(name: str, spec: dict | None, label: str):
+    """Tipə uyğun widget; boş (None) = null. Giriş dəyəri yalnız bu sessiyada qalır."""
+    key, kind = f"f_{name}", (spec or {}).get("kind", "float")
+    hint = name
+    if spec and "p01" in spec:
+        hint += f" · tipik aralıq {spec['p01']:g} … {spec['p99']:g}"
+    if kind == "categorical":
+        return st.selectbox(label, [None] + spec["allowed_values"], key=key, help=hint,
+                            format_func=lambda x: "—" if x is None else x)
+    if kind == "binary":
+        return st.selectbox(label, [None, 0, 1], key=key, help=hint, format_func=lambda x: "—" if x is None else str(x))
+    if kind == "integer":
+        return st.number_input(label, value=None, step=1, key=key, help=hint)
+    return st.number_input(label, value=None, step=0.01, format="%g", key=key, help=hint)
+
+
+def _coerce_sample(v, spec: dict | None):
+    kind = (spec or {}).get("kind", "float")
+    if v is None:
+        return None
+    if kind == "categorical":
+        return v if v in spec["allowed_values"] else None
+    if kind == "binary":
+        return int(v) if v in (0, 1) else None
+    try:
+        return int(v) if kind == "integer" else float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _load_sample(fields: list[str]) -> None:
+    """on_change: seçilmiş sintetik nümunə formu doldurur; '—' formu təmizləyir."""
+    idx, schema, samples = st.session_state.get("sample_idx"), _schema(), _samples()
+    ap = samples[idx]["applicant"] if idx is not None else {}
+    for n in fields:
+        st.session_state[f"f_{n}"] = _coerce_sample(ap.get(n), schema.get(n))
+
+
+def _show_result(r: dict) -> None:
+    with st.container(border=True):
+        c1, c2 = st.columns(2)
+        c1.metric("Defolt ehtimalı", f"{r['prediction_probability']:.1%}")
+        c2.metric("Risk bandı", f"{COLORS.get(r['risk_band'], '')} {r['risk_band']}")
+        st.caption(f"model={r['model_version']} · id={r['prediction_id']} · {r['timestamp']}")
+    counts = [w for w in r["warnings"] if "çatışmayan" in w or "naməlum" in w or "törəmə" in w]
+    for w in r["warnings"]:
+        if w not in counts:
+            st.warning(w)
+    if counts:
+        st.caption(" · ".join(counts))
+    st.caption(r["disclaimer"])
+
+
 def single():
     info = call("GET", "/model-info")
     if not info:
         return
     if info["excluded_protected_features"]:
         st.caption("Modeldən xaric edilən həssas atributlar: " + ", ".join(info["excluded_protected_features"]))
-    st.write("Bilinən dəyərləri daxil edin; boş qalan sahə çatışmayan (null) sayılır.")
-    applicant = {}
+    schema, display = _schema(), _load("configs/feature_display_names.yaml") or {}
+    fields = [f for f in info["feature_names"] if not f.startswith("ft_")]  # ft_* API-də avtomatik hesablanır
+    core = [f for f in CORE if f in fields] or fields[:15]
+    extra = [f for f in fields if f not in core]
+    label = lambda n: f"{display.get(n, n)}"  # noqa: E731
+
+    samples = _samples()
+    if samples:
+        st.selectbox("Nümunə yüklə (sintetik, real müraciət deyil)", [None] + list(range(len(samples))),
+                     key="sample_idx", on_change=_load_sample, args=(fields,),
+                     format_func=lambda i: "—" if i is None else f"Nümunə {i + 1} ({samples[i]['request_id']})")
+    st.write("Əsas sahələr; boş qalan sahə çatışmayan (null) sayılır. Törəmə (ft_) göstəricilər avtomatik hesablanır.")
     with st.form("applicant"):
         cols = st.columns(3)
-        for i, name in enumerate(info["feature_names"]):
-            raw = cols[i % 3].text_input(name, key=f"f_{name}")
-            if raw.strip():
-                try:
-                    applicant[name] = float(raw)
-                except ValueError:
-                    applicant[name] = raw.strip()
+        for i, n in enumerate(core):
+            with cols[i % 3]:
+                _widget(n, schema.get(n), label(n))
+        if extra:
+            with st.expander(f"Əlavə sahələr ({len(extra)})"):
+                cols = st.columns(3)
+                for i, n in enumerate(extra):
+                    with cols[i % 3]:
+                        _widget(n, schema.get(n), label(n))
         go = st.form_submit_button("Qiymətləndir")
     if go:
-        r = call("POST", "/predict", json={"applicant": applicant})
-        if r:
-            st.session_state["last"] = (applicant, r)
+        applicant = {n: st.session_state.get(f"f_{n}") for n in fields}
+        applicant = {k: v for k, v in applicant.items() if v is not None}
+        need = min(MIN_FILLED, len(fields))
+        if len(applicant) < need:
+            st.warning(f"Ən azı {need} sahə doldurun (hazırda {len(applicant)}).")
+        else:
+            r = call("POST", "/predict", json={"applicant": applicant})
+            if r:
+                st.session_state["last"] = (applicant, r)
     if "last" in st.session_state:
-        _, r = st.session_state["last"]
-        st.metric("Defolt ehtimalı", f"{r['prediction_probability']:.1%}")
-        st.subheader(f"{COLORS.get(r['risk_band'], '')} Risk bandı: {r['risk_band']}")
-        st.caption(f"model={r['model_version']} · id={r['prediction_id']} · {r['timestamp']}")
-        for w in r["warnings"]:
-            st.warning(w)
-        st.caption(r["disclaimer"])
+        _show_result(st.session_state["last"][1])
 
 
 def explanation():
