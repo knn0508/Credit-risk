@@ -22,3 +22,4 @@ Tək sətir xətası bütün batch-i yıxmır (HTTP 200); bütün sorğu səviyy
 **/explain:** query param `include_values` (default `false`) — feature `value` yalnız true olanda qaytarılır; `top_n` default 5, max 10.
 Hər iki halda giriş dəyərləri loga yazılmır.
 **/model-info (v0.3):** cavaba `feature_names` (sıralı siyahı, bundle-dan) və `excluded_protected_features` əlavə olunur; UI formu bunlardan qurulur.
+**/model-info (v0.3.1):** cavaba `warnings: [..]` əlavə olunur (məs. metadata-da `excluded_protected_features` açarı yoxdursa). Bundle yükləmə: approved bundle-da bu açar yoxdursa 503; DEV rejimində yalnız warning.

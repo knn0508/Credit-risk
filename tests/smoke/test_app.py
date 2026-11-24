@@ -18,6 +18,7 @@ def test_overview_and_single(client, monkeypatch):
     at = AppTest.from_file("../../app/streamlit_app.py", default_timeout=20).run()
     assert not at.exception and any("DEV/MOCK" in w.value for w in at.warning)
     at.sidebar.radio[0].set_value("Single Applicant").run()
+    assert any("code_gender" in c.value for c in at.caption)
     at.text_input(key="f_ext_source_2").set_value("0.5")
     at.button[0].click().run()
     assert not at.exception and any("Risk bandı" in s.value for s in at.subheader)
