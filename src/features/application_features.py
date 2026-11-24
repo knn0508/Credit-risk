@@ -45,8 +45,12 @@ class ApplicationFeatures(BaseEstimator, TransformerMixin):
         out["ft_credit_term"] = _ratio(d["amt_credit"], d["amt_annuity"])
         out["ft_credit_goods_ratio"] = _ratio(d["amt_credit"], d["amt_goods_price"])
         age = -d["days_birth"] / 365.25
+        # data-contract v1.0: processed-də sentinel artıq NaN + days_employed_is_anomalous bayrağı;
+        # xam (365243) giriş də dəstəklənir.
         anom = d["days_employed"] == DAYS_EMPLOYED_ANOM
-        emp = (-d["days_employed"] / 365.25).mask(anom)
+        if "days_employed_is_anomalous" in d.columns:
+            anom = anom | d["days_employed_is_anomalous"].fillna(0).astype(bool)
+        emp = (-d["days_employed"] / 365.25).mask(anom)  # NaN qalır
         out["ft_age_years"] = age
         out["ft_employed_years"] = emp
         out["ft_employed_anom"] = anom.astype("int8")

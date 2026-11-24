@@ -57,3 +57,10 @@ def test_no_target_needed_and_index_kept():
     d = make().set_index(pd.Index([10, 20, 30]))
     out = ApplicationFeatures().fit(d).transform(d)
     assert out.index.tolist() == [10, 20, 30] and "target" not in out.columns
+
+
+def test_processed_contract_nan_with_flag():
+    d = make(days_employed=[np.nan, -365, -365], days_employed_is_anomalous=[1, 0, 0])
+    out = ApplicationFeatures().fit(d).transform(d)
+    assert out.ft_employed_anom.tolist() == [1, 0, 0]
+    assert np.isnan(out.ft_employed_years.iloc[0])
