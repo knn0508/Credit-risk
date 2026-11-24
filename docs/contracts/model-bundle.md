@@ -17,3 +17,4 @@ Fayllar:
 **Əlavə (05 protokolu, qəbul):** 04 bundle ilə yanaşı `artifacts/models/<model_version>/oof_predictions.parquet`
 (sk_id_curr, fold, p_raw, target — kiçik hərf, data-contract adlandırması ilə eyni) və `split.json` (train/holdout SK_ID_CURR siyahıları, seed) verir. Kalibrasiya və hədd seçimi
 yalnız OOF-da; holdout yalnız son hesabat üçün. (decisions/0001 ilə uyğundur.)
+**Əlavə (06 sorğusu, qəbul):** `background.parquet` — feature_names sütunları, ≤1000 sətir, train fold-dan seed=42 ilə nümunə, SHAP background üçün. Yalnız `artifacts/` daxilində (Git-ə girmir; real müraciət sətirləri ehtiva edir, loglanmır/paylaşılmır). Yoxdursa `/explain` 503. Sahib: 04 yaradır, 05 explainability istifadə edir.
