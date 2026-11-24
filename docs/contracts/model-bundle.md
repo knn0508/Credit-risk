@@ -13,3 +13,4 @@ Fayllar:
 **Yükləmə qaydası (06):** metadata.validation_status=="approved" olmayan bundle yalnız `MOCK/DEV` rejimində; feature_names uyğunsuzluğu = xəta.
 **Band:** `band(p_cal)`: p≤low_max Low; p≤medium_max Medium; əks halda High — bir funksiya, src/evaluation/risk_bands.py (05), 06 import edir.
 **Status axını:** 04 → unvalidated; 05 → validated (+calibrator); 01 → approved.
+**Əlavə (decisions/0002):** metadata.json-a `excluded_protected_features: [..]` əlavə olunur (məs. ["code_gender"]).
