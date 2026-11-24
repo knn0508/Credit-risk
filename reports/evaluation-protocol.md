@@ -39,3 +39,11 @@
 `src/evaluation/{metrics,calibration,risk_bands,cost,subgroups}.py`, `src/explainability/shap_explainer.py`,
 `reports/model_card.md`, `reports/validation_report.md`, `reports/figures/`, `configs/risk_policy.yaml` təklifi (01-ə handoff).
 Testlər: metrik funksiyaları, band sərhədləri (≤ daxil), SHAP shape/ardıcıllıq.
+
+## Data kontraktı v1.0-dan nəticələr (01 dondurdu)
+- Baza defolt dərəcəsi train-də 8.073% (307 511 sətir) → PR-AUC baza xətti ≈0.081; band payı/lift bu dərəcəyə nisbətən hesablanır.
+- Zaman sütunu yoxdur → zaman-əsaslı validation mümkün deyil; model card "Məhdudiyyətlər"də qeyd olunacaq (təsadüfi stratified split gələcək paylanma sürüşməsini ölçmür).
+- Train/test paylanma sürüşməsi (|SMD|<0.5) məlumdur; hesabatda qeyd, test setdə metrik hesablanmır (TARGET yoxdur).
+- Subgroup sütunları kiçik hərflə (`code_gender`, `name_education_type`, `name_family_status`, `days_birth`). `code_gender`
+  'XNA'→NaN: audit-də ayrıca "unknown" qrupu; kiçik qruplar (n < 100 və ya <10 müsbət) üçün AUC hesablanmır, "insufficient" yazılır.
+- `code_gender` model feature-ı deyil (decisions/0002); audit üçün processed datadan SK_ID_CURR ilə join edilir (join-dən əvvəl/sonra sətir sayı yoxlanır).
