@@ -12,9 +12,18 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from . import baselines, bundle, cv, protocol
 
 
-def load_xy(cfg: dict):
+def add_ft(df: pd.DataFrame) -> pd.DataFrame:
+    """03-ün stateless ft_ feature-ları (train/inference eyni kod). Index saxlanır."""
+    from src.features import AggregateFeatures, ApplicationFeatures
+    ft = pd.concat([ApplicationFeatures().fit(df).transform(df), AggregateFeatures().fit(df).transform(df)], axis=1)
+    return pd.concat([df, ft], axis=1)
+
+
+def load_xy(cfg: dict, use_ft: bool | None = None):
     df = pd.read_parquet(cfg["train_data"])
     df.columns = [c.lower() for c in df.columns]
+    if cfg.get("use_ft") if use_ft is None else use_ft:
+        df = add_ft(df)
     ids, y = df[cfg["id_col"]], df[cfg["target_col"]]
     drop = {cfg["id_col"], cfg["target_col"], *cfg["excluded_protected_features"]}
     return df.drop(columns=[c for c in df.columns if c in drop]), y, ids

@@ -9,3 +9,4 @@ target_col: target
 excluded_protected_features: [code_gender]
 train_data: data/processed/application_train.parquet
 models_dir: artifacts/models
+use_ft: false   # true → 03-ün ft_ feature-ları (src.features main-ə düşəndən sonra)
