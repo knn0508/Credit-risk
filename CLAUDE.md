@@ -5,6 +5,20 @@ TARGET yalnız application_train-də var. application_test target-sizdir və mod
 seçimində İSTİFADƏ EDİLMİR. Risk bandı (Low/Medium/High) kalibrasiya olunmuş ehtimaldan
 və validation-da seçilən hədlərdən törədilir. Sistem qərar DƏSTƏYİDİR: avtomatik təsdiq/rədd yoxdur.
 
+## Dataset sənədləri (həqiqət mənbəyi)
+- Cədvəllərin təsviri: `docs/data/dataset-description.md`
+- Cədvəl əlaqələri diaqramı: `docs/data/dataset-diagram.png`
+- Sütun təsvirləri: `data/raw/HomeCredit_columns_description.csv`
+Cədvəl əlaqələri və grain barədə yaddaşa yox, bu fayllara əsaslan. Faktiki sətir sayı, tip və null faizləri
+yalnız real fayllardan (Agent 02 auditi) götürülür.
+
+## Cədvəl əlaqələri (qısa)
+- application_train/test: 1 sətir = 1 müraciət, açar SK_ID_CURR (TARGET yalnız train-də).
+- bureau: SK_ID_CURR ilə bağlanır (1 müştəri → çox kredit). bureau_balance: SK_ID_BUREAU ilə bureau-ya (aylıq sətirlər).
+- previous_application: SK_ID_CURR ilə bağlanır. POS_CASH_balance, installments_payments, credit_card_balance:
+  SK_ID_PREV ilə previous_application-a bağlanır və SK_ID_CURR sütununu da saxlayır (aylıq/ödəniş sətirləri).
+- Hamısı one-to-many-dir: əsas cədvələ birbaşa join etmə, əvvəl SK_ID_CURR səviyyəsinə aqreqasiya et.
+
 ## Agentlər, sahiblik, worktree
 | # | Rol | Sahib olduğu yollar | Branch / worktree |
 |---|-----|---------------------|-------------------|
