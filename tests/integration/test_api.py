@@ -15,7 +15,7 @@ def test_health_and_info(client):
     info = client.get("/model-info").json()
     assert info["dev_mode"] is True and info["feature_count"] == 3
     assert info["feature_names"] == ["ext_source_2", "credit_income_ratio", "days_employed"]
-    assert info["excluded_protected_features"] == []
+    assert info["excluded_protected_features"] == ["code_gender"]
 
 
 def test_predict_shape(client):

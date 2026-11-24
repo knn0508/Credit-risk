@@ -42,5 +42,6 @@ def make_bundle(path: Path, status: str = "unvalidated", calibrated: bool = True
     (path / "metadata.json").write_text(json.dumps({
         "model_version": "mock-20260101-0000000", "algorithm": "logreg", "created_at": "2026-01-01T00:00:00Z",
         "feature_count": len(FEATURES), "metrics": {"roc_auc": 0.5}, "calibrated": calibrated,
-        "validation_status": status, "risk_policy_version": "mock"}))
+        "validation_status": status, "risk_policy_version": "mock",
+        "excluded_protected_features": ["code_gender"]}))
     return path
