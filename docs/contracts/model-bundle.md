@@ -15,5 +15,5 @@ Fayllar:
 **Status axını:** 04 → unvalidated; 05 → validated (+calibrator); 01 → approved.
 **Əlavə (decisions/0002):** metadata.json-a `excluded_protected_features: [..]` əlavə olunur (məs. ["code_gender"]).
 **Əlavə (05 protokolu, qəbul):** 04 bundle ilə yanaşı `artifacts/models/<model_version>/oof_predictions.parquet`
-(SK_ID_CURR, fold, p_raw, TARGET) və `split.json` (train/holdout SK_ID_CURR siyahıları, seed) verir. Kalibrasiya və hədd seçimi
+(sk_id_curr, fold, p_raw, target — kiçik hərf, data-contract adlandırması ilə eyni) və `split.json` (train/holdout SK_ID_CURR siyahıları, seed) verir. Kalibrasiya və hədd seçimi
 yalnız OOF-da; holdout yalnız son hesabat üçün. (decisions/0001 ilə uyğundur.)
