@@ -8,7 +8,7 @@ naməlum sahə → ignore + warning; tip xətası → 422.
 {"prediction_id":"uuid4","timestamp":"ISO-8601 UTC","model_version":"...",
  "prediction_probability":0.0,"risk_band":"Low|Medium|High",
  "calibrated":true,"warnings":["..."],
- "disclaimer":"Qərar dəstəyidir; avtomatik təsdiq/rədd deyil."}
+ "disclaimer":"Qərar dəstəyidir; avtomatik təsdiq/rədd deyil. Yalnız demo/prototip; real kredit qərarları üçün deyil."}
 ```
 `prediction_probability` kalibrasiya olunmuş ehtimaldır (calibrator yoxdursa calibrated=false + warning).
 **/explain:** /predict cavabı + `explanation` (bax explanation.md). **/batch:** `{"applicants":[...]}` → `{"results":[...]}`, max 10 000 sətir.
