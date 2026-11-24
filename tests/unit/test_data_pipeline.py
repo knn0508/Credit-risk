@@ -96,3 +96,18 @@ def test_fill_after_join_zero_counts_only():
     lin = {"c": {"stat": "count"}, "m": {"stat": "mean"}, "h": {"stat": "has_history"}}
     out = fill_after_join(df, lin)
     assert out.c.tolist() == [1, 0] and out.h.tolist() == [1, 0] and out.m.isna().tolist() == [False, True]
+
+
+def test_file_fingerprint_and_data_version(tmp_path):
+    import hashlib
+    from src.data.build import RAW_TABLES, data_version, file_fingerprint
+    f = tmp_path / "x.csv"
+    f.write_bytes(b"a,b\n1,2\n")
+    fp = file_fingerprint(f)
+    assert fp == {"bytes": 8, "sha256": hashlib.sha256(b"a,b\n1,2\n").hexdigest()}
+    for t in RAW_TABLES:
+        (tmp_path / f"{t}.csv").write_bytes(t.encode())
+    v1 = data_version(tmp_path)
+    assert len(v1["data_version"]) == 16 and set(v1["raw_files"]) == set(RAW_TABLES)
+    (tmp_path / "bureau.csv").write_bytes(b"changed")
+    assert data_version(tmp_path)["data_version"] != v1["data_version"]

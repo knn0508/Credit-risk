@@ -1,5 +1,7 @@
-# Feature catalogue — QARALAMA v0.1 (Agent 03)
-Status: draft. Real EDA, null faizləri və leakage hesabatı 02-nin `data/processed` + `schema.json`-undan sonra.
+# Feature catalogue — v0.2 (Agent 03)
+Status: kod yazılıb və main-dədir: 23 ft_ (ApplicationFeatures 16 + AggregateFeatures 7). Hesabat: docs/features/eda-leakage-report.md.
+Sadələşdirmə (04, LightGBM 5-fold OOF): ft_employed_anom silindi (dublikat). ft_bureau_overdue_credit_ratio və ft_bureau_req_total_year SAXLANDI (silmək AUC-ni ≤0.0002 dəyişir, PR -0.0017-ə qədər azalır).
+Cəmi təsir: 228 -> 251 feature, ROC-AUC 0.7808 -> ~0.785 (+0.004), PR-AUC +0.003.
 Adlandırma: yeni feature-lar `ft_` prefiksi (data-contract). Orijinal/aqreqat sütunlar 02-dən gəlir (kiçik hərf).
 Null siyasəti: tree modellər üçün NaN saxlanır; xətti model üçün imputer transformer daxilində, YALNIZ train fold-da fit.
 
@@ -21,13 +23,17 @@ Null siyasəti: tree modellər üçün NaN saxlanır; xətti model üçün imput
 | ft_bureau_req_total_year | float | amt_req_credit_bureau_* cəmi (hour..year) | hamısı NaN → NaN |
 | ft_days_registration_years, ft_id_publish_years | float | -days_*/365.25 | — |
 
-## B. Aqreqat feature-lar (mənbə: 02-nin SK_ID_CURR səviyyəli aqreqatları; yalnız müraciətə qədər tarixçə)
-Planlaşdırılan qruplar (dəqiq sütun adları 02 `schema.json`-dan sonra):
-- bureau: aktiv/bağlı kredit sayı, cəmi borc / kredit limiti nisbəti (`ft_bureau_debt_credit_ratio`), max gecikmə (CREDIT_DAY_OVERDUE), bureau_balance-dan DPD statusu payı.
-- previous_application: əvvəlki müraciət sayı, Refused payı (`ft_prev_refused_share`), orta amt_application/amt_credit fərqi.
-- installments_payments: gecikmiş ödəniş payı, orta gecikmə günü (DAYS_ENTRY_PAYMENT − DAYS_INSTALMENT), ödəniş/taksit nisbəti.
-- POS_CASH / credit_card: max SK_DPD, orta limit istifadəsi (`ft_cc_utilization`).
-Yoxdursa (tarixçəsiz müştəri): say=0, nisbət=NaN + `*_has_history` flag.
+## B. Aqreqat feature-lar (AggregateFeatures; mənbə: 02-nin SK_ID_CURR aqreqatları; tarixçəsiz -> NaN)
+| Feature | Məntiq | Null (train) |
+|---|---|---|
+| ft_bureau_debt_credit_ratio | bureau_amt_credit_sum_debt_sum / bureau_amt_credit_sum_sum | 17% |
+| ft_bureau_overdue_credit_ratio | bureau_amt_credit_sum_overdue_sum / bureau_amt_credit_sum_sum | 15% |
+| ft_prev_credit_application_ratio | previous_application_amt_credit_mean / amt_application_mean | 6% |
+| ft_new_credit_to_prev_credit_max | amt_credit / previous_application_amt_credit_max | 5% |
+| ft_cc_utilization | credit_card_balance_amt_balance_mean / amt_credit_limit_actual_mean | 72% |
+| ft_cc_payment_balance_ratio | amt_payment_current_mean / amt_balance_mean | 81% |
+| ft_inst_payment_ratio | installments_payments_amt_payment_sum / amt_instalment_sum | 5% |
+Payların özü (refused_mean, is_late_mean, dpd_share_*) 02-nin aqreqatlarındadır, təkrar hesablanmır.
 
 ## C. Leakage / risk siyahısı (ilkin)
 - TARGET və törəməsi — feature deyil.
