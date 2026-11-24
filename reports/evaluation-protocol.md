@@ -54,3 +54,9 @@ Testlər: metrik funksiyaları, band sərhədləri (≤ daxil), SHAP shape/ardı
 - 03-ün `docs/features/eda-leakage-report.md` nəticəsi qəbul olunur (TARGET yoxdur, |AUC−0.5|>0.25 şübhəli feature yoxdur, gələcək-tarix yoxdur; 24 ft_ feature). Bu evristikdir: "müraciətdən sonra" aqreqat sətri data özündən sübut oluna bilməz.
 - 05-in müstəqil əlavə yoxlaması: final modelin qlobal SHAP top-15 siyahısı məzmunca nəzərdən keçirilir (ext_source, kredit/mal məbləği, bureau/tarixçə); proqnoz anında məlum olmayan sahə varsa 01/03-ə qaytarılır.
 - Hesabatda qeyd: OOF CV AUC (≈0.77–0.78) real kredit-skorinq üçün gözlənilən aralıqdadır; qeyri-adi yüksək dəyər olmadığı üçün leakage göstəricisi yoxdur.
+
+## 03 handoff-dan əlavələr (03-to-05-features-spec v0.2)
+- Subgroup audit proksi sahələrə genişlənir: `occupation_type`, `organization_type`, `cnt_children` (qrupla), region (`region_rating_client`) — `name_family_status`, `name_education_type`, yaş və `code_gender`-ə əlavə. Çox kateqoriyalı sahələrdə n<100 qrup "insufficient".
+- Izah qeydi: `ext_source_*` və `ft_ext_source_*` korrelyasiyalıdır; SHAP təsiri onlar arasında bölür, ona görə tək feature-un əhəmiyyəti
+  qrup şəklində oxunmalıdır. Model card-da qeyd olunur. SHAP səbəb-nəticə sübutu deyil.
+- ft_cc_* NaN (72–81%) kredit kartı tarixçəsi olmayanlardadır, xəta deyil.

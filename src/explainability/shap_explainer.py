@@ -81,3 +81,14 @@ class ShapExplainer:
 
     def global_importance(self, X: pd.DataFrame) -> pd.Series:
         return self.shap_values(X).abs().mean().sort_values(ascending=False)
+
+
+def load_display_names(path: str = "configs/feature_display_names.yaml") -> dict:
+    """Owner: Agent 03. Missing file/key -> feature_name is shown (explanation.md)."""
+    import os
+
+    import yaml
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return {str(k): str(v) for k, v in (yaml.safe_load(f) or {}).items()}

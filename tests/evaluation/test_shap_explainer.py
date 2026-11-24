@@ -46,3 +46,12 @@ def test_values_only_when_requested():
     assert all("value" in f for f in e["top_positive_factors"] + e["top_negative_factors"])
     with pytest.raises(ValueError):
         ex.explain_row(X.iloc[:2])
+
+
+def test_load_display_names(tmp_path):
+    from src.explainability.shap_explainer import load_display_names
+    assert load_display_names(str(tmp_path / "missing.yaml")) == {}
+    p = tmp_path / "d.yaml"
+    p.write_text("# c\na: 'Feature A'\n", encoding="utf-8")
+    assert load_display_names(str(p)) == {"a": "Feature A"}
+    assert "ext_source_2" in load_display_names()
