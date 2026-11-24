@@ -27,7 +27,7 @@ def install_band_stub() -> None:
     sys.modules["src.evaluation.risk_bands"] = mod
 
 
-def make_bundle(path: Path, status: str = "unvalidated", calibrated: bool = True) -> Path:
+def make_bundle(path: Path, status: str = "unvalidated", calibrated: bool = True, protected_key: bool = True) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(42)
     X = pd.DataFrame(rng.normal(size=(500, len(FEATURES))), columns=FEATURES)
@@ -39,9 +39,12 @@ def make_bundle(path: Path, status: str = "unvalidated", calibrated: bool = True
         joblib.dump(IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(raw, y), path / "calibrator.joblib")
     (path / "feature_names.json").write_text(json.dumps(FEATURES))
     (path / "risk_policy.json").write_text(json.dumps({"version": "mock", "low_max": 0.3, "medium_max": 0.6}))
-    (path / "metadata.json").write_text(json.dumps({
+    meta = {
         "model_version": "mock-20260101-0000000", "algorithm": "logreg", "created_at": "2026-01-01T00:00:00Z",
         "feature_count": len(FEATURES), "metrics": {"roc_auc": 0.5}, "calibrated": calibrated,
         "validation_status": status, "risk_policy_version": "mock",
-        "excluded_protected_features": ["code_gender"]}))
+        "excluded_protected_features": ["code_gender"]}
+    if not protected_key:
+        del meta["excluded_protected_features"]
+    (path / "metadata.json").write_text(json.dumps(meta))
     return path
