@@ -24,3 +24,7 @@ Gender (High): F 8.5% / 8.5%, M 12.9% / 12.9% — dəyişməyib.
 - decisions/0002 üçün: yaşı saxlamaq performansı bir qədər yaxşılaşdırır, çıxarmaq fərqi azaltmır → çıxarmağın fairness faydası yoxdur. Qalan risk band payı fərqinin biznes/hüquqi məqbulluğudur (limit və ya insan baxışı).
 - Real azaldıcı variantlar (yaş-proksi feature-ların çıxarılması, qrup üzrə hədd, fairness məhdudiyyətli training) ayrı qərar və 04 işi tələb edir; qrup üzrə hədd ayrıca hüquqi baxış tələb edir.
 - Holdout noage bundle üçün işlədilməyib; seçim edilsə, hədlər dondurulduqdan sonra işlədilər.
+
+## Əlavə: ft_employed_age_ratio da çıxarılıb (xgb-noage2-20261124-f95e78a, 239 feature, OOF 0.7853/0.2744)
+Hədlər 0.0277/0.1909 (Platt). High payı: <30 19.9%, 30–39 12.5%, 40–49 8.3%, 50–59 6.0%, 60+ 2.7%; Low: <30 13.6%, 60+ 45.7%; calib gap <30 +0.0072, |gap| ≤ 0.0072. Gender High F 8.5% / M 12.9%.
+Nəticə: yaşdan törəmə ikinci feature də çıxarılsa nəticə praktik dəyişmir (<30/60+ High nisbəti ~7.4×). Yəni yaş siqnalı qalan proksilərdən (days_employed, ext_source_*, təhsil/peşə/ailə, kredit tarixçəsi uzunluğu və s.) gəlir; yaş-feature-ların çıxarılması band fərqini azaltmır.
