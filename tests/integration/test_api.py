@@ -85,8 +85,36 @@ def test_logs_have_no_input_values(client, caplog):
     assert "0.123456" not in caplog.text and "prediction_id=" in caplog.text
 
 
-def test_explain_503_until_05(client):
-    assert client.post("/explain", json={"applicant": OK}).status_code == 503
+def test_explain_ok(client):
+    r = client.post("/explain", json={"applicant": OK})
+    assert r.status_code == 200
+    j = r.json()
+    x = j["explanation"]
+    assert j["risk_band"] and x["explanation_space"] == "log_odds" and x["method"] == "shap_linear"
+    assert 0 < len(x["top_positive_factors"]) <= 5
+    assert all("value" not in f or f["value"] is None for f in x["top_positive_factors"])
+    contribs = [f["contribution"] for f in x["top_positive_factors"]]
+    assert contribs == sorted(contribs, reverse=True) and all(c > 0 for c in contribs)
+    assert all(f["contribution"] < 0 for f in x["top_negative_factors"])
+
+
+def test_explain_params(client):
+    x = client.post("/explain?include_values=true&top_n=1", json={"applicant": OK}).json()["explanation"]
+    assert len(x["top_positive_factors"]) <= 1
+    assert all(f["value"] is not None for f in x["top_positive_factors"] + x["top_negative_factors"])
+    assert client.post("/explain?top_n=11", json={"applicant": OK}).status_code == 422
+
+
+def test_explain_503_without_background(tmp_path):
+    p = make_bundle(tmp_path / "nb", background=False)
+    c = TestClient(create_app(load_bundle(p, allow_dev=True)))
+    assert c.post("/explain", json={"applicant": OK}).status_code == 503
+
+
+def test_explain_not_logged(client, caplog):
+    with caplog.at_level(logging.DEBUG):
+        client.post("/explain?include_values=true", json={"applicant": {**OK, "ext_source_2": 0.987654}})
+    assert "0.987654" not in caplog.text
 
 
 def test_missing_protected_key_dev_warns(tmp_path):
@@ -120,3 +148,22 @@ def test_sample_applicants_batch(client):
     reqs = json.loads((Path(__file__).parents[2] / "docs/data/sample-applicants.json").read_text())["requests"]
     r = client.post("/predict/batch", json={"applicants": [x["applicant"] for x in reqs]}).json()
     assert r["summary"] == {"total": 20, "ok": 20, "failed": 0}
+
+
+def test_approved_bundle_full_path(tmp_path, monkeypatch):
+    """Real bundle gələndə eyni yol: approved + açar var → DEV warning yox, /explain işləyir."""
+    p = make_bundle(tmp_path / "ap", status="approved")
+    c = TestClient(create_app(load_bundle(p)))
+    info = c.get("/model-info").json()
+    assert info["dev_mode"] is False and info["validation_status"] == "approved" and info["warnings"] == []
+    pr = c.post("/predict", json={"applicant": OK}).json()
+    assert pr["warnings"] == [] and pr["calibrated"] is True
+    assert c.post("/explain", json={"applicant": OK}).status_code == 200
+    monkeypatch.setenv("BUNDLE_DIR", str(p)); monkeypatch.delenv("ALLOW_DEV", raising=False)
+    assert TestClient(create_app()).get("/health").json()["model_loaded"] is True
+
+
+def test_unapproved_via_env_needs_allow_dev(bundle_dir, monkeypatch):
+    monkeypatch.setenv("BUNDLE_DIR", str(bundle_dir)); monkeypatch.delenv("ALLOW_DEV", raising=False)
+    c = TestClient(create_app())
+    assert c.get("/health").json()["model_loaded"] is False and c.post("/predict", json={"applicant": OK}).status_code == 503
