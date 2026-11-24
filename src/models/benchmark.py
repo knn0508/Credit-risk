@@ -71,7 +71,7 @@ def main():
         if a.save:
             model = est.fit(Xt, yt)
             bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=name, seed=seed,
-                               config_path=a.config, data_version=bundle.file_hash(cfg["train_data"]),
+                               config_path=a.config, data_version=bundle.data_version(),
                                metrics={k: m[k] for k in ("roc_auc", "pr_auc")}, positive_rate=float(yt.mean()),
                                excluded_protected_features=cfg["excluded_protected_features"])
     out = Path(cfg["models_dir"]) / "benchmark_results.json"

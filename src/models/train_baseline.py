@@ -59,7 +59,7 @@ def main():
     print("OOF:", {k: round(v, 4) for k, v in metrics.items()})
     model = est.fit(Xt, yt)
     d = bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=a.model, seed=seed,
-                           config_path=a.config, data_version=bundle.file_hash(cfg["train_data"]),
+                           config_path=a.config, data_version=bundle.data_version(),
                            metrics=metrics, positive_rate=float(yt.mean()),
                            excluded_protected_features=cfg["excluded_protected_features"])
     print("bundle:", d)

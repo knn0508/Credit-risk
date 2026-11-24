@@ -69,3 +69,8 @@ def test_benchmark_models_fit_predict_in_pipeline():
 def test_excluded_features_match_features_module():
     from src.features import EXCLUDED_PROTECTED_FEATURES
     assert protocol.load_config()["excluded_protected_features"] == EXCLUDED_PROTECTED_FEATURES
+
+
+def test_data_version_from_schema(tmp_path):
+    (tmp_path / "s.json").write_text('{"meta": {"data_version": "abc123"}}')
+    assert bundle.data_version(tmp_path / "s.json") == "abc123"

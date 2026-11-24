@@ -12,6 +12,11 @@ def file_hash(path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
 
 
+def data_version(schema_path="data/processed/schema.json") -> str:
+    """02-nin data versiyası (schema.json meta.data_version, raw fayl hash-lərindən)."""
+    return json.loads(Path(schema_path).read_text())["meta"]["data_version"]
+
+
 def git_sha() -> str:
     try:
         return subprocess.check_output(["git", "rev-parse", "--short=7", "HEAD"], text=True).strip()
