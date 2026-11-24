@@ -33,6 +33,13 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
             raise HTTPException(503, state["error"] or "bundle yoxdur")
         return state["bundle"]
 
+    def score_one(b: Bundle, applicant: dict):
+        """Tip/dəyər xətası → 422 (mesajda dəyər yoxdur)."""
+        try:
+            return service.score(b, [applicant])[0]
+        except (ValueError, TypeError) as e:
+            raise HTTPException(422, f"applicant dəyərləri etibarsızdır ({type(e).__name__})")
+
     def logged(preds: list[Prediction], t0: float) -> None:
         ms = (time.perf_counter() - t0) * 1000
         for p in preds:
@@ -57,9 +64,9 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
     @app.post("/predict", response_model=Prediction)
     def predict(req: PredictRequest):
         t0 = time.perf_counter()
-        r = service.score(need(), [req.applicant])
-        logged(r, t0)
-        return r[0]
+        r = score_one(need(), req.applicant)
+        logged([r], t0)
+        return r
 
     @app.post("/predict/batch", response_model=BatchResponse)
     def batch(req: BatchRequest):
@@ -90,7 +97,7 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
             ex = b.explainer()
         except ExplainUnavailable as e:
             raise HTTPException(503, str(e))
-        pred = service.score(b, [req.applicant])[0]
+        pred = score_one(b, req.applicant)
         X, _ = service.to_frame(b, [req.applicant])
         expl = ex.explain_row(X, top_n=top_n, include_values=include_values)  # fərdi izah loga yazılmır
         logged([pred], t0)
