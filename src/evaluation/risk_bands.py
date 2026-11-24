@@ -37,3 +37,8 @@ def band_from_policy(p_cal: float, policy: Mapping) -> str:
     """policy: dict like risk_policy.json {low_max, medium_max} or {thresholds: {...}}."""
     t = policy.get("thresholds", policy)
     return band(p_cal, t["low_max"], t["medium_max"])
+
+
+def bands(probs, low_max: float, medium_max: float) -> list[str]:
+    """Vectorised helper: band() applied to an iterable of calibrated probabilities."""
+    return [band(p, low_max, medium_max) for p in probs]
