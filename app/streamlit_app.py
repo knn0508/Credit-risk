@@ -43,15 +43,24 @@ def overview():
 
 
 def single():
-    st.write("Müraciət sahələrini JSON kimi daxil edin (feature_name → dəyər).")
-    txt = st.text_area("applicant", "{}", height=200)
-    if st.button("Qiymətləndir"):
-        try:
-            applicant = json.loads(txt)
-            assert isinstance(applicant, dict)
-        except (ValueError, AssertionError):
-            st.error("Düzgün JSON obyekti deyil")
-            return
+    info = call("GET", "/model-info")
+    if not info:
+        return
+    if info["excluded_protected_features"]:
+        st.caption("Modeldən xaric edilən həssas atributlar: " + ", ".join(info["excluded_protected_features"]))
+    st.write("Bilinən dəyərləri daxil edin; boş qalan sahə çatışmayan (null) sayılır.")
+    applicant = {}
+    with st.form("applicant"):
+        cols = st.columns(3)
+        for i, name in enumerate(info["feature_names"]):
+            raw = cols[i % 3].text_input(name, key=f"f_{name}")
+            if raw.strip():
+                try:
+                    applicant[name] = float(raw)
+                except ValueError:
+                    applicant[name] = raw.strip()
+        go = st.form_submit_button("Qiymətləndir")
+    if go:
         r = call("POST", "/predict", json={"applicant": applicant})
         if r:
             st.session_state["last"] = (applicant, r)
