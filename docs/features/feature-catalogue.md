@@ -12,7 +12,6 @@ Null siyasəti: tree modellər üçün NaN saxlanır; xətti model üçün imput
 | ft_credit_goods_ratio | float | amt_credit / amt_goods_price | goods<=0 → NaN |
 | ft_age_years | float | -days_birth / 365.25 | — |
 | ft_employed_years | float | -days_employed / 365.25 | days_employed==365243 → NaN (anomaliya) |
-| ft_employed_anom | int8 0/1 | days_employed==365243 (təqaüdçü/işsiz flag-i) | — |
 | ft_employed_age_ratio | float | ft_employed_years / ft_age_years | employed NaN → NaN |
 | ft_income_per_person | float | amt_income_total / cnt_fam_members | members<=0 → NaN |
 | ft_ext_source_mean | float | ext_source_1..3 orta (mövcud olanlardan) | hamısı NaN → NaN |

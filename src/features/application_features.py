@@ -14,7 +14,7 @@ REQ = [f"amt_req_credit_bureau_{s}" for s in ("hour", "day", "week", "mon", "qrt
 
 FEATURE_NAMES = [
     "ft_credit_income_ratio", "ft_annuity_income_ratio", "ft_credit_term",
-    "ft_credit_goods_ratio", "ft_age_years", "ft_employed_years", "ft_employed_anom",
+    "ft_credit_goods_ratio", "ft_age_years", "ft_employed_years",
     "ft_employed_age_ratio", "ft_income_per_person", "ft_ext_source_mean",
     "ft_ext_source_min", "ft_ext_source_prod", "ft_ext_source_missing_cnt",
     "ft_doc_count", "ft_bureau_req_total_year", "ft_days_registration_years",
@@ -53,7 +53,6 @@ class ApplicationFeatures(BaseEstimator, TransformerMixin):
         emp = (-d["days_employed"] / 365.25).mask(anom)  # NaN qalır
         out["ft_age_years"] = age
         out["ft_employed_years"] = emp
-        out["ft_employed_anom"] = anom.astype("int8")
         out["ft_employed_age_ratio"] = _ratio(emp, age)
         out["ft_income_per_person"] = _ratio(d["amt_income_total"], d["cnt_fam_members"])
         ext = d[EXT]
@@ -67,4 +66,4 @@ class ApplicationFeatures(BaseEstimator, TransformerMixin):
         out["ft_days_registration_years"] = -d["days_registration"] / 365.25
         out["ft_id_publish_years"] = -d["days_id_publish"] / 365.25
         return out[FEATURE_NAMES].astype({c: "float64" for c in FEATURE_NAMES
-                                          if c not in ("ft_employed_anom", "ft_ext_source_missing_cnt", "ft_doc_count")})
+                                          if c not in ("ft_ext_source_missing_cnt", "ft_doc_count")})
