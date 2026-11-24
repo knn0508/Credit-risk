@@ -88,6 +88,9 @@ def main():
         print(rows[-1], flush=True)
         if a.save:
             model = est.fit(Xt, yt)
+            if name == "xgb":  # bundle GPU-suz hostda (06/Docker) yüklənə bilsin; proqnoz eynidir
+                model[-1].get_booster().set_param({"device": "cpu"})
+                model[-1].set_params(device="cpu")
             bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=name, seed=seed,
                                config_path=a.config, data_version=bundle.data_version(),
                                metrics={k: m[k] for k in ("roc_auc", "pr_auc")}, positive_rate=float(yt.mean()), X_train=Xt,
