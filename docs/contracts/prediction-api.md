@@ -23,3 +23,4 @@ Tək sətir xətası bütün batch-i yıxmır (HTTP 200); bütün sorğu səviyy
 Hər iki halda giriş dəyərləri loga yazılmır.
 **/model-info (v0.3):** cavaba `feature_names` (sıralı siyahı, bundle-dan) və `excluded_protected_features` əlavə olunur; UI formu bunlardan qurulur.
 **/model-info (v0.3.1):** cavaba `warnings: [..]` əlavə olunur (məs. metadata-da `excluded_protected_features` açarı yoxdursa). Bundle yükləmə: approved bundle-da bu açar yoxdursa 503; DEV rejimində yalnız warning.
+**Törəmə feature-lar (v0.4):** `applicant` ft_* sahələrini göndərməyə bilər. API onları train ilə EYNİ `src/features` kodundan (stateless) xam sahələrdən hesablayır; sorğuda verilmiş ft_* üstünlük təşkil edir. Xam giriş çatışarsa nəticə NaN (train davranışı). Cavabda warning: "N törəmə (ft_) feature avtomatik hesablandı".
