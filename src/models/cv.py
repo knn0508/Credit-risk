@@ -10,8 +10,8 @@ from .protocol import cv_folds
 def run_cv(estimator, X: pd.DataFrame, y, ids, seed: int, n_splits: int):
     y = np.asarray(y)
     if len(set(ids)) != len(ids):
-        raise ValueError("SK_ID_CURR unikal olmalıdır")
-    oof = pd.DataFrame({"SK_ID_CURR": np.asarray(ids), "fold": -1, "p_raw": np.nan, "TARGET": y})
+        raise ValueError("sk_id_curr unikal olmalıdır")
+    oof = pd.DataFrame({"sk_id_curr": np.asarray(ids), "fold": -1, "p_raw": np.nan, "target": y})
     per_fold = []
     for k, a, b in cv_folds(y, seed, n_splits):
         m = clone(estimator).fit(X.iloc[a], y[a])

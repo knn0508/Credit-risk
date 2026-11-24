@@ -24,7 +24,7 @@ def test_cv_reproducible_and_beats_dummy():
     X, y, ids = _data()
     o1, m1, _ = cv.run_cv(baselines.logreg(), X, y, ids, 42, 5)
     o2, m2, _ = cv.run_cv(baselines.logreg(), X, y, ids, 42, 5)
-    assert o1.fold.dtype.kind == "i" and m1 == m2 and (o1.fold >= 0).all() and o1.p_raw.notna().all()
+    assert list(o1.columns) == ["sk_id_curr", "fold", "p_raw", "target"] and o1.fold.dtype.kind == "i" and m1 == m2 and (o1.fold >= 0).all() and o1.p_raw.notna().all()
     _, md, _ = cv.run_cv(baselines.dummy(), X, y, ids, 42, 5)
     assert m1["roc_auc"] > md["roc_auc"]
 
