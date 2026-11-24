@@ -26,6 +26,17 @@ class Bundle:
     dev_mode: bool
     path: Optional[Path] = None
     _explainer: Any = None
+    _dtypes: Any = None
+
+    def ref_dtypes(self) -> dict:
+        """background.parquet-dən sütun dtype-ları (train/inference eyni tiplər); yoxdursa {}."""
+        if self._dtypes is None:
+            self._dtypes = {}
+            if self.path and (self.path / "background.parquet").exists():
+                import pandas as pd
+                bg = pd.read_parquet(self.path / "background.parquet")
+                self._dtypes = {c: bg[c].dtype for c in bg.columns}
+        return self._dtypes
 
     def explainer(self):
         """Lazy ShapExplainer (src/explainability, 05). background.parquet yoxdursa/uyğunsuzdursa ExplainUnavailable."""

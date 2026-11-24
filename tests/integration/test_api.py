@@ -173,3 +173,10 @@ def test_type_error_is_422_not_500(client):
     for path in ("/predict", "/explain"):
         r = client.post(path, json={"applicant": {**OK, "ext_source_2": "SECRET-abc"}})
         assert r.status_code == 422 and "SECRET-abc" not in r.text
+
+
+def test_batch_fast_path_matches_row_by_row(client):
+    rows = [OK, {**OK, "ext_source_2": -1.0}, {"ext_source_2": 0.2}]
+    r = client.post("/predict/batch", json={"applicants": rows}).json()
+    single = [client.post("/predict", json={"applicant": a}).json()["prediction_probability"] for a in rows]
+    assert [x["prediction"]["prediction_probability"] for x in r["results"]] == pytest.approx(single)

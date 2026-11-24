@@ -74,15 +74,22 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         b = need()
         rows: list[BatchRow] = []
         preds: list[Prediction] = []
-        for i, a in enumerate(req.applicants):
-            try:
-                p = service.score(b, [a])[0]
-            except Exception as e:  # tək sətir xətası batch-i yıxmır; dəyər mesaja yazılmır
+        try:  # sürətli yol: bütün batch bir dəfəyə
+            results: list[Prediction | None] = list(service.score(b, req.applicants))
+        except (ValueError, TypeError):  # bir sətir pozuqdursa: sətir-sətir, tək xəta batch-i yıxmır
+            results = []
+            for a in req.applicants:
+                try:
+                    results.append(service.score(b, [a])[0])
+                except (ValueError, TypeError):
+                    results.append(None)
+        for i, p in enumerate(results):
+            if p is None:  # dəyər mesaja yazılmır
                 rows.append(BatchRow(index=i, status="error",
-                                     error=RowError(code="VALIDATION", message=type(e).__name__)))
-                continue
-            preds.append(p)
-            rows.append(BatchRow(index=i, status="ok", prediction=p))
+                                     error=RowError(code="VALIDATION", message="sətir dəyərləri etibarsızdır")))
+            else:
+                preds.append(p)
+                rows.append(BatchRow(index=i, status="ok", prediction=p))
         logged(preds, t0)
         n_ok = len(preds)
         return BatchResponse(batch_id=str(uuid.uuid4()), results=rows,

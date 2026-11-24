@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Build konteksti: repo kökü (docker compose -f deployment/docker-compose.yml build).
 # Bundle image-ə QOYULMUR — /models/current-ə read-only volume kimi qoşulur.
 FROM python:3.12-slim
@@ -6,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /srv
 COPY deployment/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 COPY api ./api
 COPY src ./src
 COPY app ./app
