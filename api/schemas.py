@@ -2,7 +2,8 @@
 from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
-DISCLAIMER = "Qərar dəstəyidir; avtomatik təsdiq/rədd deyil."
+DISCLAIMER = ("Qərar dəstəyidir; avtomatik təsdiq/rədd deyil. "
+              "Yalnız demo/prototip; real kredit qərarları üçün deyil.")
 MAX_BATCH = 10_000
 
 

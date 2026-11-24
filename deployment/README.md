@@ -23,7 +23,7 @@ Mock bundle (YALNIZ DEV, real model deyil):
 ## Docker
     MODEL_VERSION=<ver> ALLOW_DEV=1 docker compose -f deployment/docker-compose.yml up --build
 API :8000, UI :8501. Image: pinlənmiş asılılıqlar (deployment/requirements.txt), non-root (uid 10001), HEALTHCHECK /health.
-Bundle və data image-ə daxil deyil. Docker build hələ yoxlanmayıb (01 yoxlayır).
+Bundle və data image-ə daxil deyil. Docker build Agent 01 tərəfindən yoxlanıb (image ~1.7GB; konteyner approved bundle ilə qalxır, healthcheck healthy).
 
 ## Testlər
     python -m pytest tests -q

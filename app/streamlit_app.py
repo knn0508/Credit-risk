@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 API = os.environ.get("API_URL", "http://localhost:8000")
-DISCLAIMER = "Qərar dəstəyidir; avtomatik təsdiq/rədd deyil. SHAP model davranışını izah edir, səbəb-nəticə sübutu deyil."
+DISCLAIMER = ("Qərar dəstəyidir; avtomatik təsdiq/rədd deyil. Yalnız demo/prototip; real kredit qərarları üçün deyil. SHAP model davranışını izah edir, səbəb-nəticə sübutu deyil.")
 COLORS = {"Low": "🟢", "Medium": "🟡", "High": "🔴"}
 
 
@@ -128,4 +128,5 @@ def batch():
 PAGES = {"Overview": overview, "Single Applicant": single, "Risk Explanation": explanation, "Batch / Portfolio": batch}
 st.set_page_config(page_title="Credit Risk Decision Support", layout="wide")
 st.title("Credit Risk — Qərar Dəstəyi")
+st.info("Yalnız demo/prototip; real kredit qərarları üçün deyil. Qərar dəstəyidir: avtomatik təsdiq/rədd yoxdur.")  # hər səhifədə
 PAGES[st.sidebar.radio("Səhifə", list(PAGES))]()

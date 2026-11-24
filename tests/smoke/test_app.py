@@ -60,3 +60,12 @@ def test_ui_shows_business_approval_warning(tmp_path, monkeypatch):
     _patch(monkeypatch, c)
     at = AppTest.from_file("../../app/streamlit_app.py", default_timeout=20).run()
     assert not at.exception and any("biznes təsdiqi yoxdur" in w.value for w in at.warning)
+
+
+def test_demo_banner_on_every_page(client, monkeypatch):
+    _patch(monkeypatch, client)
+    at = AppTest.from_file("../../app/streamlit_app.py", default_timeout=30).run()
+    for page in ("Overview", "Single Applicant", "Risk Explanation", "Batch / Portfolio"):
+        at.sidebar.radio[0].set_value(page).run()
+        assert not at.exception
+        assert any("Yalnız demo/prototip; real kredit qərarları üçün deyil" in i.value for i in at.info), page
