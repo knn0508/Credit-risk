@@ -64,3 +64,11 @@ def test_processed_contract_nan_with_flag():
     out = ApplicationFeatures().fit(d).transform(d)
     assert out.ft_employed_anom.tolist() == [1, 0, 0]
     assert np.isnan(out.ft_employed_years.iloc[0])
+
+
+def test_no_ft_feature_uses_protected_attribute():
+    from src.features import EXCLUDED_PROTECTED_FEATURES
+    d = make().drop(columns=[], errors="ignore")
+    d["code_gender"] = "F"
+    out = ApplicationFeatures().transform(d)
+    assert not set(EXCLUDED_PROTECTED_FEATURES) & set(out.columns)

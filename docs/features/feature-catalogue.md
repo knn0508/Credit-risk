@@ -33,7 +33,7 @@ Yoxdursa (tarixçəsiz müştəri): say=0, nisbət=NaN + `*_has_history` flag.
 ## C. Leakage / risk siyahısı (ilkin)
 - TARGET və törəməsi — feature deyil.
 - Aqreqatlarda yalnız keçmiş (DAYS_* ≤ 0, MONTHS_BALANCE ≤ 0) sətirlər; gələcək dəyər (müsbət DAYS) yoxlanacaq.
-- Həssas/ədalət (qərar 0002, 01): `code_gender` modeldən ÇIXARILIR (yalnız 05 fairness auditi üçün data-da qalır, feature_names-ə girmir). `ft_age_years` qalır, 05 audit edir.
+- Həssas/ədalət (qərar 0002, insan təsdiqi): `code_gender` model feature-ı DEYİL (yalnız 05 audit); `src.features.EXCLUDED_PROTECTED_FEATURES` = ["code_gender"] -> 04 bundle metadata.excluded_protected_features. `ft_age_years` qalır, 05 audit edir.
 - Proksi ola biləcək sahələr (işarələnib, 05 auditə baxır): `ft_age_years`, `cnt_children`, `name_family_status`, `region_*`/`region_rating_client*`, `organization_type`, `occupation_type`, `name_education_type`.
 - Müraciət sonrası məlumat ola biləcək sahələr (məs. previous_application-da cari müraciətə aid olmayan, tarixi sonrakı sətirlər) 02/03 birgə yoxlayır.
 
