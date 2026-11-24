@@ -39,3 +39,18 @@ def test_bundle_round_trip_feature_order(tmp_path):
     model2, names, meta = bundle.load_bundle(d)
     assert names == list(X.columns) and meta["validation_status"] == "unvalidated"
     np.testing.assert_allclose(model2.predict_proba(X[names])[:, 1], model.predict_proba(X)[:, 1])
+
+
+def test_train_baseline_with_categoricals_and_excluded(tmp_path):
+    from src.models import train_baseline as tb
+    X, y, ids = _data(800)
+    df = X.assign(sk_id_curr=ids, target=y, code_gender=np.where(y == 1, "F", "M"),
+                  occ=np.where(np.arange(800) % 3 == 0, "x", "y"))
+    df.loc[::50, "occ"] = None
+    df.to_parquet(tmp_path / "t.parquet")
+    cfg = {"train_data": str(tmp_path / "t.parquet"), "id_col": "sk_id_curr", "target_col": "target",
+           "excluded_protected_features": ["code_gender"]}
+    Xf, yf, idf = tb.load_xy(cfg)
+    assert "code_gender" not in Xf and "sk_id_curr" not in Xf and "target" not in Xf
+    _, m, _ = cv.run_cv(tb.logreg_for(Xf, 42), Xf, yf, idf, 42, 5)
+    assert m["roc_auc"] > 0.6
