@@ -11,7 +11,7 @@ Fayllar:
     approved_by, risk_policy_version, library_versions}`
 - `risk_policy.json` — configs/risk_policy.yaml-ın təsdiqlənmiş surəti (version, low_max, medium_max)
 **Yükləmə qaydası (06):** metadata.validation_status=="approved" olmayan bundle yalnız `MOCK/DEV` rejimində; feature_names uyğunsuzluğu = xəta.
-**Band:** `band(p_cal)`: p≤low_max Low; p≤medium_max Medium; əks halda High — bir funksiya, src/evaluation/risk_bands.py (05), 06 import edir.
+**Band:** `band(p, low_max, medium_max)` və `band_from_policy(p, policy_dict)` (05 imzası, qəbul): p≤low_max Low; p≤medium_max Medium; əks halda High — bir funksiya, src/evaluation/risk_bands.py (05), 06 import edir.
 **Status axını:** 04 → unvalidated; 05 → validated (+calibrator); 01 → approved.
 **Əlavə (decisions/0002):** metadata.json-a `excluded_protected_features: [..]` əlavə olunur (məs. ["code_gender"]).
 **Əlavə (05 protokolu, qəbul):** 04 bundle ilə yanaşı `artifacts/models/<model_version>/oof_predictions.parquet`
