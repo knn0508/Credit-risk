@@ -18,3 +18,5 @@ Oxunuş:
 4. Kiçik qruplar (n<100) üçün AUC hesablanmayıb; peşə/təşkilat/ailə nəticələri reports/subgroups_*_holdout.md-dədir.
 
 Qərar tələb edən suallar: (a) yaş feature-ı saxlanılsın, yoxsa çıxarılsın/məhdudlaşdırılsın (çıxarılsa performans itkisi 04 ilə ölçülməlidir)? (b) band payı yaş/gender üzrə hansı fərqlərə yol verilir? (c) Medium/High üçün insan baxışı prosesi.
+
+Əlavə (yaş ablasiyası, reports/fairness_age_ablation.md): days_birth/ft_age_years çıxarılsa da <30 vs 60+ band fərqi azalmır (High <30: 17.9%→19.8%, 60+: 2.8%→2.7%), proksilər yaşı daşıyır; AUC −0.0018, PR-AUC −0.0029. Yəni (a) sualı üçün: çıxarmağın fairness faydası ölçülməyib/görünmür.
