@@ -5,7 +5,7 @@
  "top_negative_factors":[{"feature_name":"...","display_name":"...","value":0,"contribution":-0.03}],
  "note":"SHAP model davranışını izah edir, səbəb-nəticə sübutu deyil."}
 ```
-- `contribution`: SHAP dəyəri (log-odds və ya model çıxış fəzası; `metadata.explanation_space` ilə qeyd olunur). Müsbət = riski artırır.
-- Hər siyahı default top 5, ardıcıllıq |contribution| azalan. `value` göstərilməsi konfiqurasiya olunur (həssaslıq üçün söndürülə bilər).
+- `contribution`: SHAP dəyəri, `explanation_space` sahəsi cavabda və metadata-da olur: `"log_odds"` (default; LightGBM/LogReg) və ya `"probability"`. Müsbət = riski artırır.
+- Hər siyahı default top 5, ardıcıllıq |contribution| azalan. `value` default QAYTARILMIR; yalnız `include_values=true` ilə (bax prediction-api.md v0.2).
 - `display_name`: `configs/feature_display_names.yaml` (03 doldurur, 05 istifadə edir); yoxdursa feature_name.
 - Hesablama src/explainability (05); 06 yalnız göstərir. Fərdi izah loga yazılmır.
