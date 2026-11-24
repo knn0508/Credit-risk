@@ -40,5 +40,5 @@ Yoxdursa (tarixçəsiz müştəri): say=0, nisbət=NaN + `*_has_history` flag.
 ## D. Növbəti addımlar
 1. 02 processed + schema.json → real EDA (notebooks/eda), null/outlier/target-by-bin.
 2. `src/features/` sklearn transformer (BaseEstimator+TransformerMixin, stabil sütun sırası, fit train fold-da).
-3. `configs/feature_display_names.yaml` (brief 03 üzrə 03 doldurur; configs 01-ə məxsusdur → 01-ə bildir).
+3. `configs/feature_display_names.yaml` — YAZILDI (01 təsdiqi ilə); aqreqat adları 02 schema.json-dan sonra əlavə olunacaq.
 4. Testlər: fit/transform, null davranışı, sütun sırası, TARGET yoxluğu.
