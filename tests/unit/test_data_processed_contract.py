@@ -48,3 +48,9 @@ def test_history_flags_consistent(frames):
     assert tr.bureau_has_history.sum() == tr.bureau_sk_id_bureau_count.gt(0).sum()
     no_hist = tr[tr.credit_card_balance_has_history == 0]
     assert no_hist.credit_card_balance_amt_balance_mean.isna().all()
+
+
+def test_schema_has_data_version():
+    m = json.loads((P / "schema.json").read_text())["meta"]
+    assert len(m["data_version"]) == 16 and m["git_commit"]
+    assert len(m["raw_files"]) == 8 and all(len(v["sha256"]) == 64 for v in m["raw_files"].values())
