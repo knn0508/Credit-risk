@@ -15,7 +15,7 @@ def test_health_and_info(client):
     info = client.get("/model-info").json()
     assert info["dev_mode"] is True and info["feature_count"] == 3
     assert info["feature_names"] == ["ext_source_2", "credit_income_ratio", "days_employed"]
-    assert info["excluded_protected_features"] == []
+    assert info["excluded_protected_features"] == ["code_gender"]
 
 
 def test_predict_shape(client):
@@ -87,3 +87,28 @@ def test_logs_have_no_input_values(client, caplog):
 
 def test_explain_503_until_05(client):
     assert client.post("/explain", json={"applicant": OK}).status_code == 503
+
+
+def test_missing_protected_key_dev_warns(tmp_path):
+    p = make_bundle(tmp_path / "d", protected_key=False)
+    c = TestClient(create_app(load_bundle(p, allow_dev=True)))
+    assert any("excluded_protected_features" in w for w in c.post("/predict", json={"applicant": OK}).json()["warnings"])
+    info = c.get("/model-info").json()
+    assert info["excluded_protected_features"] == [] and any("excluded_protected_features" in w for w in info["warnings"])
+
+
+def test_empty_protected_list_no_warning(tmp_path):
+    import json
+    p = make_bundle(tmp_path / "e")
+    m = json.loads((p / "metadata.json").read_text()); m["excluded_protected_features"] = []
+    (p / "metadata.json").write_text(json.dumps(m))
+    c = TestClient(create_app(load_bundle(p, allow_dev=True)))
+    assert not any("excluded" in w for w in c.post("/predict", json={"applicant": OK}).json()["warnings"])
+    assert c.get("/model-info").json()["warnings"] == []
+
+
+def test_approved_without_protected_key_rejected(tmp_path):
+    p = make_bundle(tmp_path / "x", status="approved", protected_key=False)
+    with pytest.raises(BundleError):
+        load_bundle(p)
+    assert TestClient(create_app(load_bundle(make_bundle(tmp_path / "y", status="approved")))).get("/health").status_code == 200

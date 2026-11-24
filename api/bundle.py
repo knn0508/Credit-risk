@@ -21,6 +21,13 @@ class Bundle:
     risk_policy: dict
     dev_mode: bool
 
+    @property
+    def warnings(self) -> list[str]:
+        # açar yoxdur ≠ açar boş siyahıdır
+        if "excluded_protected_features" not in self.metadata:
+            return ["excluded_protected_features metadata-da yoxdur"]
+        return []
+
 
 def load_bundle(path: str | os.PathLike, allow_dev: bool = False) -> Bundle:
     p = Path(path)
@@ -37,6 +44,8 @@ def load_bundle(path: str | os.PathLike, allow_dev: bool = False) -> Bundle:
     if meta.get("feature_count") != len(names):
         raise BundleError("feature_names və metadata.feature_count uyğun deyil")
     approved = meta.get("validation_status") == "approved"
+    if approved and "excluded_protected_features" not in meta:
+        raise BundleError("təsdiqli bundle-da excluded_protected_features açarı yoxdur")
     if not approved and not allow_dev:
         raise BundleError(
             f"bundle təsdiqsizdir (status={meta.get('validation_status')}); DEV rejimi söndürülüb")

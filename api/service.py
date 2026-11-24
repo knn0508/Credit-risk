@@ -40,7 +40,7 @@ def score(b: Bundle, applicants: list[dict]) -> list[Prediction]:
     now = datetime.now(timezone.utc).isoformat()
     out = []
     for pi, w in zip(p, warns):
-        w = list(w)
+        w = list(w) + b.warnings
         if not calibrated:
             w.append("calibrator yoxdur: xam ehtimal istifadə olunur")
         if b.dev_mode:

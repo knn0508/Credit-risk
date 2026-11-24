@@ -81,3 +81,4 @@ class ModelInfo(BaseModel):
     feature_names: list[str]
     excluded_protected_features: list[str]
     dev_mode: bool
+    warnings: list[str] = []
