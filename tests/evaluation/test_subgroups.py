@@ -20,3 +20,9 @@ def test_audit_unknown_and_insufficient():
     assert a.loc["unknown", "auc"] == "insufficient"
     assert a.n.sum() == n and 0 <= a.high_share.max() <= 1
     assert isinstance(a.loc["F", "auc"], float)
+
+
+def test_to_md_table():
+    from src.evaluation.run_audit import to_md
+    t = to_md(pd.DataFrame({"a": [1], "b": ["x"]}))
+    assert t.splitlines() == ["| a | b |", "|---|---|", "| 1 | x |"]

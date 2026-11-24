@@ -1,5 +1,13 @@
-# Agent 05 təklif edir, Agent 01 təsdiqləyir. Biznes təsdiqi olmadan rəqəmlər
-# yalnız FƏRZİYYƏDİR.
-status: proposal
-version: null
-thresholds: {low_max: null, medium_max: null}
+# Agent 05 təklif etdi, Agent 01 TEXNİKİ təsdiq verdi (validation: reports/validation_report_xgb-20261124-a9b6c81.md).
+# DİQQƏT: Biznes təsdiqi YOXDUR — rəqəmlər prototip üçün FƏRZİYYƏDİR. Real istifadədən əvvəl biznes/hüquq baxışı tələb olunur.
+status: approved_provisional
+version: 1.0-xgb-provisional
+model_version: xgb-20261124-a9b6c81
+business_approval: pending
+thresholds: {low_max: 0.0274, medium_max: 0.1915}
+approved_by: agent-01 (texniki; 2026-11-24)
+conditions:
+  - Hədlər model dəyişdikdə yenidən seçilir (05).
+  - Low 30% / High 10% payı biznes tutumu ilə uzlaşdırılmalıdır.
+  - Yaş/gender bandlarına biznes+hüquqi baxış (validation report §7).
+  - Sistem qərar dəstəyidir; avtomatik təsdiq/rədd yoxdur.
