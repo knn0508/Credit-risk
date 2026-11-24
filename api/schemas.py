@@ -78,4 +78,6 @@ class ModelInfo(BaseModel):
     risk_policy_version: Optional[str]
     validation_status: str
     feature_count: int
+    feature_names: list[str]
+    excluded_protected_features: list[str]
     dev_mode: bool

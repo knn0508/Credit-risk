@@ -50,7 +50,8 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         return ModelInfo(
             model_version=m["model_version"], algorithm=m["algorithm"], created_at=m["created_at"],
             metrics=m.get("metrics", {}), risk_policy_version=b.risk_policy.get("version"),
-            validation_status=m["validation_status"], feature_count=m["feature_count"],
+            validation_status=m["validation_status"], feature_count=m["feature_count"], feature_names=b.feature_names,
+            excluded_protected_features=m.get("excluded_protected_features", []),
             dev_mode=b.dev_mode)
 
     @app.post("/predict", response_model=Prediction)
