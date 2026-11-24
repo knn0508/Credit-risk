@@ -25,8 +25,15 @@ def git_sha() -> str:
 
 
 def save_bundle(root, model, feature_names, oof, split, *, algorithm, seed, config_path, data_version,
-                metrics, positive_rate, X_train, excluded_protected_features=(), preprocessor=None):
+                metrics, positive_rate, X_train, excluded_protected_features=(), excluded_drift_features=(), device="cpu", preprocessor=None):
+    import importlib.metadata as im
     import numpy, pandas, sklearn
+    libs = {"numpy": numpy.__version__, "pandas": pandas.__version__, "scikit-learn": sklearn.__version__}
+    for lib in ("lightgbm", "xgboost", "catboost"):
+        try:
+            libs[lib] = im.version(lib)
+        except im.PackageNotFoundError:
+            pass
     sha, today = git_sha(), datetime.now(timezone.utc)
     version = f"{algorithm}-{today:%Y%m%d}-{sha}"
     d = Path(root) / version
@@ -44,8 +51,8 @@ def save_bundle(root, model, feature_names, oof, split, *, algorithm, seed, conf
             "train_rows": len(oof), "positive_rate": positive_rate, "feature_count": len(feature_names),
             "metrics": metrics, "calibrated": False, "validation_status": "unvalidated", "approved_by": None,
             "risk_policy_version": None, "excluded_protected_features": list(excluded_protected_features),
-            "library_versions": {"numpy": numpy.__version__, "pandas": pandas.__version__,
-                                 "scikit-learn": sklearn.__version__}}
+            "excluded_drift_features": list(excluded_drift_features), "excluded_drift_decision": "decisions/0003",
+            "device": device if algorithm in ("xgb", "catboost") else "cpu", "library_versions": libs}
     (d / "metadata.json").write_text(json.dumps(meta, indent=2))
     return d
 

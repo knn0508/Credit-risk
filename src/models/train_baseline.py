@@ -26,7 +26,16 @@ def load_xy(cfg: dict, use_ft: bool | None = None):
         df = add_ft(df)
     ids, y = df[cfg["id_col"]], df[cfg["target_col"]]
     drop = {cfg["id_col"], cfg["target_col"], *cfg["excluded_protected_features"]}
-    return df.drop(columns=[c for c in df.columns if c in drop]), y, ids
+    pref = tuple(cfg.get("excluded_drift_prefixes") or ())
+    cols = [c for c in df.columns if c in drop or (pref and c.startswith(pref))]
+    return df.drop(columns=cols), y, ids
+
+
+def excluded_drift_features(cfg: dict) -> list:
+    """Metadata üçün: faktiki xaric edilən drift sütunları (decisions/0003)."""
+    pref = tuple(cfg.get("excluded_drift_prefixes") or ())
+    cols = pd.read_parquet(cfg["train_data"]).columns
+    return sorted(c.lower() for c in cols if pref and c.lower().startswith(pref))
 
 
 def logreg_for(X: pd.DataFrame, seed: int, class_weight=None):
@@ -61,7 +70,8 @@ def main():
     d = bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=a.model, seed=seed,
                            config_path=a.config, data_version=bundle.data_version(),
                            metrics=metrics, positive_rate=float(yt.mean()), X_train=Xt,
-                           excluded_protected_features=cfg["excluded_protected_features"])
+                           excluded_protected_features=cfg["excluded_protected_features"],
+                           excluded_drift_features=excluded_drift_features(cfg))
     print("bundle:", d)
 
 

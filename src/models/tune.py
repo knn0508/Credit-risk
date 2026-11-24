@@ -18,11 +18,12 @@ def main(config: str = protocol.DEFAULT_CONFIG):
     split = protocol.make_split(ids, y, seed, cfg["holdout_size"])
     tr = ids.isin(set(split["train_ids"])).to_numpy()
     Xt, yt, it = X[tr].reset_index(drop=True), y[tr].reset_index(drop=True), ids[tr].reset_index(drop=True)
+    device = benchmark.resolve_device(cfg.get("device", "auto"))
     name, rows = t["model"], []
 
     def trial(params, label):
         t0 = time.time()
-        _, m, pf = cv.run_cv(benchmark.make(name, Xt, seed, params), Xt, yt, it, seed, cfg["cv_folds"])
+        _, m, pf = cv.run_cv(benchmark.make(name, Xt, seed, params, device), Xt, yt, it, seed, cfg["cv_folds"])
         rows.append({"label": label, "params": params, "roc_auc": round(m["roc_auc"], 4),
                      "pr_auc": round(m["pr_auc"], 4), "seconds": round(time.time() - t0)})
         print(rows[-1], flush=True)

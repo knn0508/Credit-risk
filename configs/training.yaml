@@ -24,3 +24,6 @@ tuning:
   class_weight_options: [null, balanced]   # resampling-siz imbalance müqayisəsi
 # Tuning nəticəsi seçildikdən sonra bura yazılır (benchmark.make oxuyur):
 model_params: {}
+# decisions/0003: bureau_balance-dən törəyən sütunlar default xaric (train 35% vs test 100% əhatə sürüşməsi)
+excluded_drift_prefixes: [bureau_months_, bureau_dpd_, bureau_has_bb_sum]
+device: auto   # auto|cpu|cuda (XGBoost/CatBoost GPU; LightGBM/RF CPU). OOF müqayisəsi eyni device-da

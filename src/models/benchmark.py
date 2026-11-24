@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
 from . import bundle, cv, protocol
-from .train_baseline import load_xy
+from .train_baseline import excluded_drift_features, load_xy
 
 
 def _wrap(X: pd.DataFrame, clf):
@@ -23,7 +23,22 @@ def _wrap(X: pd.DataFrame, clf):
     return Pipeline([("pre", pre), ("clf", clf)])
 
 
-def make(name: str, X: pd.DataFrame, seed: int, params: dict | None = None):
+def resolve_device(device: str = "auto") -> str:
+    """auto → nvidia-smi varsa cuda, yoxsa cpu. LightGBM/RF həmişə CPU."""
+    if device != "auto":
+        return device
+    import shutil
+    import subprocess
+    if shutil.which("nvidia-smi"):
+        try:
+            subprocess.run(["nvidia-smi", "-L"], check=True, capture_output=True, timeout=10)
+            return "cuda"
+        except Exception:
+            pass
+    return "cpu"
+
+
+def make(name: str, X: pd.DataFrame, seed: int, params: dict | None = None, device: str = "cpu"):
     p = (params or {})
     if name == "rf":
         clf = RandomForestClassifier(**{"n_estimators": 300, "min_samples_leaf": 50, "max_features": "sqrt",
@@ -37,11 +52,12 @@ def make(name: str, X: pd.DataFrame, seed: int, params: dict | None = None):
         from xgboost import XGBClassifier
         clf = XGBClassifier(**{"n_estimators": 600, "learning_rate": 0.03, "max_depth": 5,
                                "colsample_bytree": 0.5, "subsample": 0.8, "min_child_weight": 20,
-                               "tree_method": "hist", "random_state": seed, "n_jobs": -1, **p})
+                               "tree_method": "hist", "device": device, "random_state": seed, "n_jobs": -1, **p})
     elif name == "catboost":
         from catboost import CatBoostClassifier
         clf = CatBoostClassifier(**{"iterations": 800, "learning_rate": 0.05, "depth": 6,
-                                    "random_seed": seed, "verbose": 0, "thread_count": -1, "allow_writing_files": False, **p})
+                                    "random_seed": seed, "verbose": 0, "thread_count": -1, "allow_writing_files": False,
+                                    "task_type": "GPU" if device == "cuda" else "CPU", **p})
     else:
         raise ValueError(name)
     return _wrap(X, clf)
@@ -55,6 +71,8 @@ def main():
     a = ap.parse_args()
     cfg = protocol.load_config(a.config)
     seed = cfg["random_seed"]
+    device = resolve_device(cfg.get("device", "auto"))
+    print("device:", device, flush=True)
     X, y, ids = load_xy(cfg)
     split = protocol.make_split(ids, y, seed, cfg["holdout_size"])
     tr = ids.isin(set(split["train_ids"])).to_numpy()
@@ -62,7 +80,7 @@ def main():
     rows = []
     for name in a.models:
         t0 = time.time()
-        est = make(name, Xt, seed, (cfg.get("model_params") or {}).get(name))
+        est = make(name, Xt, seed, (cfg.get("model_params") or {}).get(name), device)
         oof, m, pf = cv.run_cv(est, Xt, yt, it, seed, cfg["cv_folds"])
         m = {**m, "seconds": round(time.time() - t0)}
         rows.append({"model": name, **{k: round(v, 4) for k, v in m.items()},
@@ -73,7 +91,8 @@ def main():
             bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=name, seed=seed,
                                config_path=a.config, data_version=bundle.data_version(),
                                metrics={k: m[k] for k in ("roc_auc", "pr_auc")}, positive_rate=float(yt.mean()), X_train=Xt,
-                               excluded_protected_features=cfg["excluded_protected_features"])
+                               excluded_protected_features=cfg["excluded_protected_features"],
+                           excluded_drift_features=excluded_drift_features(cfg), device=device)
     out = Path(cfg["models_dir"]) / "benchmark_results.json"
     out.write_text(json.dumps(rows, indent=2))
     print(pd.DataFrame(rows).to_string(index=False))
