@@ -167,3 +167,9 @@ def test_unapproved_via_env_needs_allow_dev(bundle_dir, monkeypatch):
     monkeypatch.setenv("BUNDLE_DIR", str(bundle_dir)); monkeypatch.delenv("ALLOW_DEV", raising=False)
     c = TestClient(create_app())
     assert c.get("/health").json()["model_loaded"] is False and c.post("/predict", json={"applicant": OK}).status_code == 503
+
+
+def test_type_error_is_422_not_500(client):
+    for path in ("/predict", "/explain"):
+        r = client.post(path, json={"applicant": {**OK, "ext_source_2": "SECRET-abc"}})
+        assert r.status_code == 422 and "SECRET-abc" not in r.text
