@@ -41,7 +41,7 @@ def make(name: str, X: pd.DataFrame, seed: int, params: dict | None = None):
     elif name == "catboost":
         from catboost import CatBoostClassifier
         clf = CatBoostClassifier(**{"iterations": 800, "learning_rate": 0.05, "depth": 6,
-                                    "random_seed": seed, "verbose": 0, "thread_count": -1, **p})
+                                    "random_seed": seed, "verbose": 0, "thread_count": -1, "allow_writing_files": False, **p})
     else:
         raise ValueError(name)
     return _wrap(X, clf)
