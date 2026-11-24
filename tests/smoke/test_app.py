@@ -29,3 +29,12 @@ def test_explanation_page_without_prediction(client, monkeypatch):
     at = AppTest.from_file("../../app/streamlit_app.py", default_timeout=20).run()
     at.sidebar.radio[0].set_value("Risk Explanation").run()
     assert not at.exception and at.info
+
+
+def test_batch_demo_sample(client, monkeypatch):
+    _patch(monkeypatch, client)
+    at = AppTest.from_file("../../app/streamlit_app.py", default_timeout=30).run()
+    at.sidebar.radio[0].set_value("Batch / Portfolio").run()
+    at.checkbox[0].check().run()
+    at.button[0].click().run()
+    assert not at.exception and at.metric[0].value == "20 / 0"
