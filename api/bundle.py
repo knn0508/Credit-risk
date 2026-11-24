@@ -8,6 +8,10 @@ from typing import Any, Optional
 import joblib
 
 
+class ExplainUnavailable(Exception):
+    """İzah qurula bilmir (→ 503)."""
+
+
 class BundleError(Exception):
     """Bundle yoxdur, natamamdır və ya təsdiqsizdir (→ 503)."""
 
@@ -20,6 +24,14 @@ class Bundle:
     metadata: dict
     risk_policy: dict
     dev_mode: bool
+    path: Optional[Path] = None
+    _explainer: Any = None
+
+    def explainer(self):
+        """Lazy ShapExplainer (src/explainability, 05). background.parquet yoxdursa/uyğunsuzdursa ExplainUnavailable."""
+        if self._explainer is None:
+            self._explainer = _build_explainer(self)
+        return self._explainer
 
     @property
     def warnings(self) -> list[str]:
@@ -49,4 +61,19 @@ def load_bundle(path: str | os.PathLike, allow_dev: bool = False) -> Bundle:
     if not approved and not allow_dev:
         raise BundleError(
             f"bundle təsdiqsizdir (status={meta.get('validation_status')}); DEV rejimi söndürülüb")
-    return Bundle(model, calibrator, names, meta, policy, dev_mode=not approved)
+    return Bundle(model, calibrator, names, meta, policy, dev_mode=not approved, path=p)
+
+
+def _build_explainer(b: Bundle):
+    import pandas as pd
+    from src.explainability.shap_explainer import ShapExplainer, load_display_names
+    bg_path = b.path / "background.parquet" if b.path else None
+    if bg_path is None or not bg_path.exists():
+        raise ExplainUnavailable("bundle-da background.parquet yoxdur")
+    bg = pd.read_parquet(bg_path)
+    if list(bg.columns) != b.feature_names:
+        raise ExplainUnavailable("background sütunları feature_names ilə uyğun deyil")
+    try:
+        return ShapExplainer(b.model, bg, load_display_names())
+    except (KeyError, AttributeError, ValueError) as e:
+        raise ExplainUnavailable(f"model izah üçün uyğun deyil: {type(e).__name__}") from e

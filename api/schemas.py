@@ -29,7 +29,7 @@ class Prediction(BaseModel):
 class Factor(BaseModel):
     feature_name: str
     display_name: str
-    value: Optional[float] = None
+    value: Optional[Any] = None
     contribution: float
 
 

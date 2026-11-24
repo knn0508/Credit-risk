@@ -1,12 +1,21 @@
 services:
   api:
     build: {context: .., dockerfile: deployment/Dockerfile}
-    environment: {BUNDLE_DIR: /models/current, ALLOW_DEV: "${ALLOW_DEV:-0}"}
+    environment:
+      BUNDLE_DIR: /models/current
+      ALLOW_DEV: "${ALLOW_DEV:-0}"   # 1 yalnız təsdiqsiz (unvalidated/validated) bundle üçün
     volumes: ["../artifacts/models/${MODEL_VERSION:?MODEL_VERSION təyin et}:/models/current:ro"]
     ports: ["8000:8000"]
+    restart: unless-stopped
   ui:
     build: {context: .., dockerfile: deployment/Dockerfile}
-    command: streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    command: streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --browser.gatherUsageStats false
     environment: {API_URL: "http://api:8000"}
     ports: ["8501:8501"]
-    depends_on: [api]
+    depends_on: {api: {condition: service_healthy}}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
