@@ -203,3 +203,12 @@ def test_calibrator_not_applied_when_metadata_false(tmp_path):
     assert j["prediction_probability"] == pytest.approx(run(tmp_path / "m")["prediction_probability"])
     assert run(tmp_path / "m")["calibrated"] is False and run(raw)["calibrated"] is False
     assert run(make_bundle(tmp_path / "ok"))["calibrated"] is True
+
+
+def test_disclaimer_demo_text_in_all_responses(client):
+    need = ("Qərar dəstəyidir", "Yalnız demo/prototip; real kredit qərarları üçün deyil")
+    docs = [client.post("/predict", json={"applicant": OK}).json()["disclaimer"],
+            client.post("/explain", json={"applicant": OK}).json()["disclaimer"],
+            client.post("/predict/batch", json={"applicants": [OK]}).json()["results"][0]["prediction"]["disclaimer"]]
+    for d in docs:
+        assert all(n in d for n in need)
