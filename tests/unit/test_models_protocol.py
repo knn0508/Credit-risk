@@ -35,9 +35,11 @@ def test_bundle_round_trip_feature_order(tmp_path):
     model = baselines.logreg().fit(X, y)
     d = bundle.save_bundle(tmp_path, model, list(X.columns), oof, protocol.make_split(ids, y, 42),
                            algorithm="logreg", seed=42, config_path="configs/training.yaml",
-                           data_version="x", metrics=m, positive_rate=float(y.mean()))
+                           data_version="x", metrics=m, positive_rate=float(y.mean()), X_train=X)
     model2, names, meta = bundle.load_bundle(d)
     assert names == list(X.columns) and meta["validation_status"] == "unvalidated"
+    bg = pd.read_parquet(d / "background.parquet")
+    assert list(bg.columns) == names and len(bg) == 600
     np.testing.assert_allclose(model2.predict_proba(X[names])[:, 1], model.predict_proba(X)[:, 1])
 
 

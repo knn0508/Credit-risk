@@ -60,7 +60,7 @@ def main():
     model = est.fit(Xt, yt)
     d = bundle.save_bundle(cfg["models_dir"], model, list(Xt.columns), oof, split, algorithm=a.model, seed=seed,
                            config_path=a.config, data_version=bundle.data_version(),
-                           metrics=metrics, positive_rate=float(yt.mean()),
+                           metrics=metrics, positive_rate=float(yt.mean()), X_train=Xt,
                            excluded_protected_features=cfg["excluded_protected_features"])
     print("bundle:", d)
 

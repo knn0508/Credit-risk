@@ -25,7 +25,7 @@ def git_sha() -> str:
 
 
 def save_bundle(root, model, feature_names, oof, split, *, algorithm, seed, config_path, data_version,
-                metrics, positive_rate, excluded_protected_features=(), preprocessor=None):
+                metrics, positive_rate, X_train, excluded_protected_features=(), preprocessor=None):
     import numpy, pandas, sklearn
     sha, today = git_sha(), datetime.now(timezone.utc)
     version = f"{algorithm}-{today:%Y%m%d}-{sha}"
@@ -36,6 +36,9 @@ def save_bundle(root, model, feature_names, oof, split, *, algorithm, seed, conf
     (d / "feature_names.json").write_text(json.dumps(list(feature_names)))
     (d / "split.json").write_text(json.dumps(split))
     oof.to_parquet(d / "oof_predictions.parquet", index=False)
+    # SHAP background (06 /explain): train-dən ≤1000 sətir, seed ilə; real sətirlər → yalnız artifacts/, loglanmır
+    X_train[list(feature_names)].sample(n=min(1000, len(X_train)), random_state=seed).reset_index(drop=True) \
+        .to_parquet(d / "background.parquet", index=False)
     meta = {"model_version": version, "algorithm": algorithm, "created_at": today.isoformat(), "git_sha": sha,
             "seed": seed, "config_path": config_path, "data_version": data_version,
             "train_rows": len(oof), "positive_rate": positive_rate, "feature_count": len(feature_names),
