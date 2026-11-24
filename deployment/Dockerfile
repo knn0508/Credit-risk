@@ -12,7 +12,7 @@ COPY api ./api
 COPY src ./src
 COPY app ./app
 COPY configs/feature_display_names.yaml ./configs/feature_display_names.yaml
-COPY docs/data/sample-applicants.json ./docs/data/sample-applicants.json
+COPY docs/data/sample-applicants.json docs/data/sample-schema.json ./docs/data/
 RUN useradd --uid 10001 --no-create-home appuser
 USER appuser
 ENV BUNDLE_DIR=/models/current PYTHONUNBUFFERED=1

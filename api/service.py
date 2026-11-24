@@ -42,19 +42,59 @@ def row_is_valid(b: Bundle, a: dict) -> bool:
     return True
 
 
+def _derived_names() -> list[str]:
+    from src.features.aggregate_features import FEATURE_NAMES_B
+    from src.features.application_features import FEATURE_NAMES
+    return list(FEATURE_NAMES) + list(FEATURE_NAMES_B)
+
+
+def _derive(b: Bundle, applicants: list[dict]) -> pd.DataFrame:
+    """ft_* feature-ları train ilə EYNİ src/features kodundan (stateless) hesablayır; yalnız bundle-ın istədikləri.
+    Sorğuda artıq verilmiş ft_* dəyəri üstünlük təşkil edir. Çatışan xam giriş → NaN (train davranışı)."""
+    from src.features import AggregateFeatures, ApplicationFeatures
+    want = [f for f in _derived_names() if f in set(b.feature_names)]
+    if not want:
+        return pd.DataFrame(index=range(len(applicants)))
+    cols = sorted({k for a in applicants for k in a} | set(b.feature_names))
+    raw = pd.DataFrame([{c: a.get(c) for c in cols} for a in applicants], columns=cols)
+    # transformerlərin oxuduğu xam sütunlar (çatışanlar NaN); rəqəm olmayan dəyər → ValueError (→ 422)
+    from src.features.application_features import DOCS, EXT, REQ
+    need = set(EXT) | set(DOCS) | set(REQ) | {
+        "amt_credit", "amt_income_total", "amt_annuity", "amt_goods_price", "days_birth", "days_employed",
+        "days_registration", "days_id_publish", "cnt_fam_members",
+        "bureau_amt_credit_sum_debt_sum", "bureau_amt_credit_sum_sum", "bureau_amt_credit_sum_overdue_sum",
+        "previous_application_amt_credit_mean", "previous_application_amt_application_mean",
+        "previous_application_amt_credit_max", "credit_card_balance_amt_balance_mean",
+        "credit_card_balance_amt_credit_limit_actual_mean", "credit_card_balance_amt_payment_current_mean",
+        "installments_payments_amt_payment_sum", "installments_payments_amt_instalment_sum"}
+    for c in need:
+        raw[c] = pd.to_numeric(raw[c], errors="raise").astype("float64") if c in raw else float("nan")
+    ft = pd.concat([ApplicationFeatures().fit(raw).transform(raw), AggregateFeatures().fit(raw).transform(raw)], axis=1)
+    return ft[want]
+
+
 def to_frame(b: Bundle, applicants: list[dict]) -> tuple[pd.DataFrame, list[list[str]]]:
-    """Sütunları feature_names sırasına salır; çatışan → NaN+warning, naməlum → ignore+warning."""
+    """Sütunları feature_names sırasına salır; çatışan → NaN+warning, naməlum → ignore+warning.
+    Törəmə ft_* sorğuda yoxdursa avtomatik hesablanır (xəbərdarlıq sayı ayrıca)."""
     known = set(b.feature_names)
+    derived = set(_derived_names()) & known
+    ft = _derive(b, applicants)
     rows, warns = [], []
-    for a in applicants:
+    for n, a in enumerate(applicants):
         w = []
-        missing = [f for f in b.feature_names if f not in a]
+        auto = [f for f in b.feature_names if f in derived and a.get(f) is None]
+        missing = [f for f in b.feature_names if f not in a and f not in derived]
         unknown = [k for k in a if k not in known and k != "SK_ID_CURR"]
         if missing:
             w.append(f"{len(missing)} çatışmayan sahə null qəbul edildi")
         if unknown:
             w.append(f"{len(unknown)} naməlum sahə nəzərə alınmadı")
-        rows.append({f: a.get(f) for f in b.feature_names})
+        if auto:
+            w.append(f"{len(auto)} törəmə (ft_) feature avtomatik hesablandı")
+        row = {f: a.get(f) for f in b.feature_names}
+        for f in auto:
+            row[f] = ft.iloc[n][f]
+        rows.append(row)
         warns.append(w)
     return _coerce(b, pd.DataFrame(rows, columns=b.feature_names)), warns
 

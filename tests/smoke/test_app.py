@@ -19,9 +19,11 @@ def test_overview_and_single(client, monkeypatch):
     assert not at.exception and any("DEV/MOCK" in w.value for w in at.warning)
     at.sidebar.radio[0].set_value("Single Applicant").run()
     assert any("code_gender" in c.value for c in at.caption)
-    at.text_input(key="f_ext_source_2").set_value("0.5")
+    at.number_input(key="f_ext_source_2").set_value(0.5)
+    at.number_input(key="f_days_employed").set_value(-1000)
+    at.number_input(key="f_credit_income_ratio").set_value(2.0)
     at.button[0].click().run()
-    assert not at.exception and any("Risk bandı" in s.value for s in at.subheader)
+    assert not at.exception and at.metric and any(m.label == "Risk bandı" for m in at.metric)
 
 
 def test_explanation_page_without_prediction(client, monkeypatch):
@@ -44,7 +46,9 @@ def test_explanation_page_after_prediction(client, monkeypatch):
     _patch(monkeypatch, client)
     at = AppTest.from_file("../../app/streamlit_app.py", default_timeout=30).run()
     at.sidebar.radio[0].set_value("Single Applicant").run()
-    at.text_input(key="f_ext_source_2").set_value("0.5")
+    at.number_input(key="f_ext_source_2").set_value(0.5)
+    at.number_input(key="f_days_employed").set_value(-1000)
+    at.number_input(key="f_credit_income_ratio").set_value(2.0)
     at.button[0].click().run()
     at.sidebar.radio[0].set_value("Risk Explanation").run()
     assert not at.exception and not at.error
