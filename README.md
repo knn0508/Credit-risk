@@ -96,9 +96,17 @@ python -m src.evaluation.run_audit   artifacts/models/<version> <low_max> <mediu
 XGBoost və CatBoost GPU-da işləyə bilər (`device: auto`, CPU fallback var); LightGBM və LogReg CPU-dadır.
 GPU nəticələri bit-bit təkrarlanmaya bilər; cihaz və kitabxana versiyaları bundle metadata-sında qeyd olunur.
 
-**Bundle statusları:** `unvalidated` (04) → `validated` (05) → `approved` (01, `risk_policy.json` ilə). Təsdiqləmə
-addımı əl ilə aparılır və repo-da skript kimi yoxdur; qaydalar [`docs/contracts/model-bundle.md`](docs/contracts/model-bundle.md)-dədir.
-`approved` olmayan bundle API-də yalnız `ALLOW_DEV=1` ilə yüklənir.
+**Bundle statusları:** `unvalidated` (04) → `validated` (05) → `approved` (01). `run_oof` kalibratoru və hədləri
+hesablayır, amma `risk_policy.json` yaratmır və statusu dəyişmir. Bu addımı skript edir (hədlər `reports/oof_<version>.json`-dan
+tam dəqiqliklə götürülür; biznes təsdiqi `pending` qalır):
+
+```bash
+python scripts/approve_bundle.py artifacts/models/<version> --approved-by "Ad Soyad"   # approved
+python scripts/approve_bundle.py artifacts/models/<version>                            # yalnız validated
+```
+
+`approved` olmayan bundle API-də yalnız `ALLOW_DEV=1` ilə yüklənir, amma `risk_policy.json` hər halda lazımdır.
+Bundle qaydaları: [`docs/contracts/model-bundle.md`](docs/contracts/model-bundle.md).
 
 ## API və UI
 
