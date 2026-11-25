@@ -1,5 +1,9 @@
 # Secret / data / böyük artefaktlar Git-ə girmir
 .env
+.dev.vars
+.wrangler/
+.hf-stage/
+node_modules/
 /data
 /artifacts
 /.agents

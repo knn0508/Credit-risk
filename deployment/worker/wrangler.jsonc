@@ -1,0 +1,12 @@
+{
+  "name": "credit-risk-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "vars": {
+    "ORIGIN_URL": "https://<user>-<space>.hf.space",
+    "ALLOWED_ORIGIN": "https://<project>.pages.dev"
+  },
+  // rate limiting binding: 30 requests / 60 s per IP (verify syntax vs current Cloudflare docs)
+  "ratelimits": [{ "name": "RL", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }],
+  "observability": { "enabled": true }
+}

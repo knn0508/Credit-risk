@@ -1,0 +1,134 @@
+{
+  "model_version": "xgb-20261125-e5bb45f",
+  "n_holdout": 61503,
+  "base_rate": 0.08072776937710356,
+  "thresholds_frozen_from_oof": {
+    "low_max": 0.027420832207915028,
+    "medium_max": 0.191470512824765
+  },
+  "discrimination_raw": {
+    "roc_auc": 0.7899805483337196,
+    "pr_auc": 0.29038957943721194,
+    "pr_auc_baseline": 0.08072776937710356
+  },
+  "discrimination_cal": {
+    "roc_auc": 0.7899805483337196,
+    "pr_auc": 0.29038957943721194,
+    "pr_auc_baseline": 0.08072776937710356
+  },
+  "auc_ci95": [
+    0.7832193522355756,
+    0.7968764992064318
+  ],
+  "calibration_cal": {
+    "brier": 0.06549454217468179,
+    "ece": 0.002121112443229685
+  },
+  "reliability_cal": [
+    {
+      "n": 6151,
+      "mean_p": 0.009049074493292836,
+      "event_rate": 0.008291334742318322
+    },
+    {
+      "n": 6151,
+      "mean_p": 0.01658120787358948,
+      "event_rate": 0.015282067956429848
+    },
+    {
+      "n": 6151,
+      "mean_p": 0.023647969588518038,
+      "event_rate": 0.022272801170541374
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.03167613114525279,
+      "event_rate": 0.03170731707317073
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.041583330889196156,
+      "event_rate": 0.03951219512195122
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.05482201382842586,
+      "event_rate": 0.053495934959349595
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.07303720314739749,
+      "event_rate": 0.07170731707317073
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.10082444478579082,
+      "event_rate": 0.0983739837398374
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.1506231396261369,
+      "event_rate": 0.15902439024390244
+    },
+    {
+      "n": 6150,
+      "mean_p": 0.3054727217463657,
+      "event_rate": 0.3076422764227642
+    }
+  ],
+  "bands": {
+    "Low": {
+      "n": 18432,
+      "share": 0.2996926979171748,
+      "default_rate": 0.015299479166666666,
+      "lift": 0.18951940930261832
+    },
+    "Medium": {
+      "n": 36989,
+      "share": 0.6014178170170561,
+      "default_rate": 0.07596853118494687,
+      "lift": 0.9410458355423539
+    },
+    "High": {
+      "n": 6082,
+      "share": 0.09888948506576915,
+      "default_rate": 0.30795790858270305,
+      "lift": 3.814770443416311
+    }
+  },
+  "high": {
+    "tp": 1873,
+    "fp": 4209,
+    "fn": 3092,
+    "precision": 0.30795790858270305,
+    "recall": 0.3772406847935549
+  },
+  "shap_method": "shap_tree",
+  "shap_top25_mean_abs_log_odds": {
+    "ft_ext_source_mean": 0.1916375309228897,
+    "ext_source_1": 0.135590597987175,
+    "ft_ext_source_min": 0.12405697256326675,
+    "ft_credit_term": 0.12131913751363754,
+    "amt_annuity": 0.10428355634212494,
+    "ft_credit_goods_ratio": 0.10394398123025894,
+    "ext_source_2": 0.09895579516887665,
+    "ft_ext_source_prod": 0.09521032124757767,
+    "ext_source_3": 0.09438586235046387,
+    "name_education_type": 0.0861610621213913,
+    "installments_payments_amt_payment_sum": 0.07931341230869293,
+    "installments_payments_is_late_mean": 0.07368220388889313,
+    "ft_bureau_debt_credit_ratio": 0.0726737305521965,
+    "pos_cash_balance_cnt_instalment_future_mean": 0.06488072872161865,
+    "own_car_age": 0.06281367689371109,
+    "pos_cash_balance_cnt_instalment_max": 0.061392247676849365,
+    "ft_prev_credit_application_ratio": 0.059170618653297424,
+    "bureau_days_credit_enddate_max": 0.0566805861890316,
+    "occupation_type": 0.055997107177972794,
+    "ft_inst_payment_ratio": 0.05510940030217171,
+    "organization_type": 0.0516013503074646,
+    "bureau_amt_credit_max_overdue_max": 0.05105657875537872,
+    "installments_payments_amt_instalment_max": 0.04871341586112976,
+    "pos_cash_balance_months_balance_max": 0.048497796058654785,
+    "previous_application_amt_annuity_mean": 0.04849107190966606
+  }
+}

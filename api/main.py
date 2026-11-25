@@ -6,8 +6,10 @@ import time
 import uuid
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-from api import service
+from api import bank, service
 from api.bundle import Bundle, BundleError, ExplainUnavailable, load_bundle
 from api.schemas import (BatchRequest, BatchResponse, BatchRow, BatchSummary, RowError, ExplainResponse, ModelInfo,
                          Prediction, PredictRequest)
@@ -123,6 +125,59 @@ def create_app(bundle: Bundle | None = None) -> FastAPI:
         expl = ex.explain_row(X, top_n=top_n, include_values=include_values)  # fərdi izah loga yazılmır
         logged([pred], t0)
         return ExplainResponse(**pred.model_dump(), explanation=expl)
+
+    # --- demo bank: PIN → müştəri → izahlı skor (bank-website üçün) ---
+    app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(","),
+                       allow_methods=["POST", "GET"], allow_headers=["*"])
+
+    class CreditCheckRequest(BaseModel):
+        pin: str
+
+    @app.post("/bank/credit-check")
+    def credit_check(req: CreditCheckRequest):
+        pin = req.pin.strip().upper()
+        if not bank.valid_pin(pin):
+            raise HTTPException(422, "PIN 7 simvol olmalı: böyük hərflər və rəqəmlər (ən azı 1 hərf və 1 rəqəm)")
+        found = bank.find_customer(pin)
+        if found is None:  # PIN loga yazılmır
+            raise HTTPException(404, "Bu PIN üzrə müştəri tapılmadı")
+        return assess(*found)
+
+    def assess(profile: dict, applicant: dict) -> dict:
+        t0 = time.perf_counter()
+        b = need()
+        pred = score_one(b, applicant)
+        X = service.to_frame(b, [applicant])[0]
+        have = X.iloc[0].notna()  # modelə real dəyər gedən feature-lar; NULL olanlar izahda göstərilmir
+        from src.features.application_features import DOCS, EXT, REQ
+        for name, srcs in (("ft_doc_count", DOCS), ("ft_ext_source_missing_cnt", EXT), ("ft_bureau_req_total_year", REQ)):
+            if all(applicant.get(c) is None for c in srcs):  # bu ft_-lər bütün giriş NULL olanda 0/saya çevrilir, real məlumat deyil
+                have[name] = False
+        try:
+            ex = b.explainer().explain_row(X, top_n=10, include_values=False)
+            for k in ("top_positive_factors", "top_negative_factors"):
+                ex[k] = [f for f in ex[k] if have.get(f["feature_name"] if isinstance(f, dict) else f.feature_name, False)][:3]
+        except ExplainUnavailable:
+            ex = None
+        logged([pred], t0)
+        return {"customer": profile, "prediction_id": pred.prediction_id, "model_version": pred.model_version,
+                "prediction_probability": pred.prediction_probability, "risk_band": pred.risk_band,
+                "explanation": ex, "data_coverage": round(float(have.mean()), 3), "warnings": pred.warnings, "disclaimer": pred.disclaimer}
+
+    @app.post("/bank/apply")
+    def apply(req: bank.Application):
+        """Yeni müraciətçi: ƏVVƏL DB-yə yazılır (commit), SONRA skor sorğusu. Skor uğursuz olsa qeyd qalır."""
+        req.pin = req.pin.strip().upper()
+        if not bank.valid_pin(req.pin):
+            raise HTTPException(422, "PIN 7 simvol olmalı: böyük hərflər və rəqəmlər (ən azı 1 hərf və 1 rəqəm)")
+        need()  # bundle yoxdursa heç nə yazma
+        try:
+            profile, applicant = bank.create_customer(req)
+        except bank.PinTaken:
+            raise HTTPException(409, "Bu PIN artıq qeydiyyatdadır")
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        return assess(profile, applicant)
 
     return app
 
